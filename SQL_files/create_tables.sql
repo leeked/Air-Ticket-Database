@@ -1,7 +1,3 @@
-/*
-NOT SURE IF ARROW FOR EMAIL BETWEEN REVIEWS AND CUSTOMER SHOULD BE IN OTHER ORDER
-IF SO ITS MY BAD SINCE I WAS RESPONSIBLE FOR THAT PART
-*/
 CREATE TABLE Customer(
     email VARCHAR(30),
     customer_name VARCHAR(30),
@@ -17,9 +13,6 @@ CREATE TABLE Customer(
     PRIMARY KEY(email)
 );
 
-/*
-not sure if the airport codes should be foreign keys here
-*/
 CREATE TABLE Flights(
     airline_name VARCHAR(20),
     flight_number INT,
@@ -66,9 +59,7 @@ CREATE TABLE Ticket(
     PRIMARY KEY(ticket_id),
     FOREIGN KEY(airline_name, flight_number, depart_date, depart_time) REFERENCES Flights
 );
-/*
-not sure if the username foreign key can be a primary key here as well.
-*/
+
 CREATE TABLE Staff_Phone(
     username VARCHAR(30),
     phone_number VARCHAR(12),
