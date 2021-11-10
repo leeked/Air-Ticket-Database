@@ -17,6 +17,9 @@ CREATE TABLE Customer(
     PRIMARY KEY(email)
 );
 
+/*
+not sure if the airport codes should be foreign keys here
+*/
 CREATE TABLE Flights(
     airline_name VARCHAR(20),
     flight_number INT,
@@ -27,8 +30,10 @@ CREATE TABLE Flights(
     arrival_time DATETIME,
     depart_airport_code INT,
     arrival_airport_code INT,
+    flight_status VARCHAR(30),
     base_price FLOAT(6,2),  
-    PRIMARY KEY(airline_name, flight_number, depart_date, depart_time)
+    PRIMARY KEY(airline_name, flight_number, depart_date, depart_time),
+    FOREIGN KEY(depart_airport_code, arrival_airport_code) REFERENCES Airport
 );
 
 CREATE TABLE Airport(
@@ -42,6 +47,7 @@ CREATE TABLE Purchases(
     ticket_id INT,
     email VARCHAR(30),
     FOREIGN KEY(ticket_id) REFERENCES Ticket,
+    FOREIGN KEY(email) REFERENCES Customer
 );
 
 CREATE TABLE Ticket(
@@ -60,10 +66,14 @@ CREATE TABLE Ticket(
     PRIMARY KEY(ticket_id),
     FOREIGN KEY(airline_name, flight_number, depart_date, depart_time) REFERENCES Flights
 );
-
+/*
+not sure if the username foreign key can be a primary key here as well.
+*/
 CREATE TABLE Staff_Phone(
     username VARCHAR(30),
-    phone_number VARCHAR(12)
+    phone_number VARCHAR(12),
+    FOREIGN KEY(username) REFERENCES Airline_Staff
+    PRIMARY KEY(username, phone_number)
 );
 
 CREATE TABLE Airline_Staff(
@@ -71,12 +81,15 @@ CREATE TABLE Airline_Staff(
     staff_password VARCHAR(300),
     first_name VARCHAR(20),
     last_name VARCHAR(20),
-    date_of_birth DATE
+    date_of_birth DATE,
+    PRIMARY KEY(username)
 );
 
 CREATE TABLE Works_For(
     username VARCHAR(30),
-    phone_number VARCHAR(12)
+    airline_name VARCHAR(20),
+    FOREIGN KEY(username) REFERENCES Airline_Staff,
+    FOREIGN KEY(airline_name) REFERENCES Airline
 );
 
 CREATE TABLE Airline(
