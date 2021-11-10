@@ -1,14 +1,15 @@
 CREATE TABLE Customer(
-    email VARCHAR(30),
+    email VARCHAR(60),  --Apparently people can have really long emails - Kevin
     customer_name VARCHAR(30),
     customer_password VARCHAR(300),
     building_number INT,
     street VARCHAR(30),
     city VARCHAR(30),
+    state VARCHAR(30),
     phone_number VARCHAR(12),
     passport_number VARCHAR(20),
     passport_expiration DATE,
-    passport_country VARCHAR(30),
+    passport_country VARCHAR(60),   --Also some long country names 
     date_of_birth DATE,
     PRIMARY KEY(email)
 );
@@ -16,17 +17,17 @@ CREATE TABLE Customer(
 CREATE TABLE Flights(
     airline_name VARCHAR(20),
     flight_number INT,
-    depart_date DATE,
-    depart_time DATETIME,
+    depart_ts DATETIME,
     airplane_id INT,
-    arrival_date DATE,
-    arrival_time DATETIME,
+    arrival_ts DATETIME,
     depart_airport_code INT,
     arrival_airport_code INT,
     flight_status VARCHAR(30),
     base_price FLOAT(6,2),  
-    PRIMARY KEY(airline_name, flight_number, depart_date, depart_time),
-    FOREIGN KEY(depart_airport_code, arrival_airport_code) REFERENCES Airport
+    PRIMARY KEY(airline_name, flight_number, depart_ts),
+    FOREIGN KEY(airline_name) REFERENCES Airline(airline_name),
+    FOREIGN KEY(airplane_id) REFERENCES Airplane(airplane_id),
+    FOREIGN KEY(depart_airport_code, arrival_airport_code) REFERENCES Airport(code)
 );
 
 CREATE TABLE Airport(
@@ -39,32 +40,31 @@ CREATE TABLE Airport(
 CREATE TABLE Purchases(
     ticket_id INT,
     email VARCHAR(30),
-    FOREIGN KEY(ticket_id) REFERENCES Ticket,
-    FOREIGN KEY(email) REFERENCES Customer
+    card_type VARCHAR(20),
+    card_number INT,
+    name_on_card VARCHAR(30),
+    expiration_date DATE,
+    purchase_ts, DATETIME,
+    sell_price FLOAT(6,2),
+    PRIMARY KEY(ticket_id),
+    FOREIGN KEY(ticket_id) REFERENCES Ticket(ticket_id),
+    FOREIGN KEY(email) REFERENCES Customer(email)
 );
 
 CREATE TABLE Ticket(
     ticket_id INT,
     airline_name VARCHAR(20),
     flight_number INT,
-    depart_date DATE,
-    depart_time DATETIME,
-    card_type VARCHAR(20),
-    card_number INT,
-    name_on_card VARCHAR(30)
-    expiration_date DATE,
-    purchase_date DATE,
-    purchase_time, DATETIME,
-    sell_price FLOAT(6,2),
+    depart_ts DATETIME,
     PRIMARY KEY(ticket_id),
-    FOREIGN KEY(airline_name, flight_number, depart_date, depart_time) REFERENCES Flights
+    FOREIGN KEY(airline_name, flight_number, depart_ts) REFERENCES Flights(airline_name, flight_number, depart_ts)
 );
 
 CREATE TABLE Staff_Phone(
     username VARCHAR(30),
     phone_number VARCHAR(12),
-    FOREIGN KEY(username) REFERENCES Airline_Staff
-    PRIMARY KEY(username, phone_number)
+    PRIMARY KEY(username, phone_number),
+    FOREIGN KEY(username) REFERENCES Airline_Staff(username)
 );
 
 CREATE TABLE Airline_Staff(
@@ -79,12 +79,13 @@ CREATE TABLE Airline_Staff(
 CREATE TABLE Works_For(
     username VARCHAR(30),
     airline_name VARCHAR(20),
-    FOREIGN KEY(username) REFERENCES Airline_Staff,
-    FOREIGN KEY(airline_name) REFERENCES Airline
+    PRIMARY KEY(username),
+    FOREIGN KEY(username) REFERENCES Airline_Staff(username),
+    FOREIGN KEY(airline_name) REFERENCES Airline(airline_name)
 );
 
 CREATE TABLE Airline(
-    airline_name VARCHAR(20)
+    airline_name VARCHAR(20),
     PRIMARY KEY(airline_name)
 );
 
@@ -92,18 +93,18 @@ CREATE TABLE Airplane(
     airline_name VARCHAR(20),
     airplane_id INT,
     num_seats INT,
-    PRIMARY KEY(airplane_id),
-    FOREIGN KEY(airplane_name) REFERENCES Airline
+    PRIMARY KEY(airplane_id, airline_name),
+    FOREIGN KEY(airline_name) REFERENCES Airline(airline_name)
 );
 
 CREATE TABLE Reviews(
-    email VARCHAR(30)
+    email VARCHAR(30),
     airline_name VARCHAR(20),
     flight_number INT,
-    depart_date DATE,
-    depart_time DATETIME,
+    depart_ts DATETIME,
     rating INT,
     comments VARCHAR(100),
-    FOREIGN KEY(email) REFERENCES Customer,
-    FOREIGN KEY(airline_name, flight_number, depart_date, depart_time) REFERENCES Flights
+    PRIMARY KEY(email, airline_name, flight_number, depart_ts),
+    FOREIGN KEY(email) REFERENCES Customer(email),
+    FOREIGN KEY(airline_name, flight_number, depart_ts) REFERENCES Flights(airline_name, flight_number, depart_ts)
 );
