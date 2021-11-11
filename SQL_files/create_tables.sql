@@ -1,16 +1,16 @@
 CREATE TABLE Customer(
     email VARCHAR(60),  --Apparently people can have really long emails - Kevin
-    customer_name VARCHAR(30),
-    customer_password VARCHAR(300),
+    customer_name VARCHAR(30) not null,
+    customer_password VARCHAR(300) not null,
     building_number INT,
-    street VARCHAR(30),
-    city VARCHAR(30),
-    state VARCHAR(30),
-    phone_number VARCHAR(12),
-    passport_number VARCHAR(20),
-    passport_expiration DATE,
-    passport_country VARCHAR(60),   --Also some long country names 
-    date_of_birth DATE,
+    street VARCHAR(30) not null,
+    city VARCHAR(30) not null,
+    state VARCHAR(30) not null,
+    phone_number VARCHAR(12) not null,
+    passport_number VARCHAR(20) not null,
+    passport_expiration DATE not null,
+    passport_country VARCHAR(60) not null,   --Also some long country names 
+    date_of_birth DATE not null,
     PRIMARY KEY(email)
 );
 
@@ -18,12 +18,12 @@ CREATE TABLE Flights(
     airline_name VARCHAR(20),
     flight_number INT,
     depart_ts DATETIME,
-    airplane_id INT,
-    arrival_ts DATETIME,
-    depart_airport_code INT,
-    arrival_airport_code INT,
+    airplane_id INT not null,
+    arrival_ts DATETIME not null,
+    depart_airport_code INT not null,
+    arrival_airport_code INT not null,
     flight_status VARCHAR(30),
-    base_price FLOAT(6,2),  
+    base_price FLOAT(6,2) not null,
     PRIMARY KEY(airline_name, flight_number, depart_ts),
     FOREIGN KEY(airline_name) REFERENCES Airline(airline_name),
     FOREIGN KEY(airplane_id) REFERENCES Airplane(airplane_id),
@@ -34,18 +34,18 @@ CREATE TABLE Airport(
     code INT,
     airport_name VARCHAR(30),
     city VARCHAR(30),
-    PRIMARY KEY(code),    
+    PRIMARY KEY(code),
 );
 
 CREATE TABLE Purchases(
     ticket_id INT,
-    email VARCHAR(30),
-    card_type VARCHAR(20),
-    card_number INT,
-    name_on_card VARCHAR(30),
-    expiration_date DATE,
-    purchase_ts, DATETIME,
-    sell_price FLOAT(6,2),
+    email VARCHAR(30) not null,
+    card_type VARCHAR(20) not null,
+    card_number INT not null,
+    name_on_card VARCHAR(30) not null,
+    expiration_date DATE not null,
+    purchase_ts, DATETIME not null,
+    sell_price FLOAT(6,2) not null,
     PRIMARY KEY(ticket_id),
     FOREIGN KEY(ticket_id) REFERENCES Ticket(ticket_id),
     FOREIGN KEY(email) REFERENCES Customer(email)
@@ -53,9 +53,9 @@ CREATE TABLE Purchases(
 
 CREATE TABLE Ticket(
     ticket_id INT,
-    airline_name VARCHAR(20),
-    flight_number INT,
-    depart_ts DATETIME,
+    airline_name VARCHAR(20) not null,
+    flight_number INT not null,
+    depart_ts DATETIME not null,
     PRIMARY KEY(ticket_id),
     FOREIGN KEY(airline_name, flight_number, depart_ts) REFERENCES Flights(airline_name, flight_number, depart_ts)
 );
@@ -69,7 +69,7 @@ CREATE TABLE Staff_Phone(
 
 CREATE TABLE Airline_Staff(
     username VARCHAR(30),
-    staff_password VARCHAR(300),
+    staff_password VARCHAR(300) not null,
     first_name VARCHAR(20),
     last_name VARCHAR(20),
     date_of_birth DATE,
@@ -78,7 +78,7 @@ CREATE TABLE Airline_Staff(
 
 CREATE TABLE Works_For(
     username VARCHAR(30),
-    airline_name VARCHAR(20),
+    airline_name VARCHAR(20) not null,
     PRIMARY KEY(username),
     FOREIGN KEY(username) REFERENCES Airline_Staff(username),
     FOREIGN KEY(airline_name) REFERENCES Airline(airline_name)
