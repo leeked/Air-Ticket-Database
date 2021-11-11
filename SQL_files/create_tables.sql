@@ -1,5 +1,5 @@
 CREATE TABLE Customer(
-    email VARCHAR(60),  --Apparently people can have really long emails - Kevin
+    email VARCHAR(60),
     customer_name VARCHAR(30) not null,
     customer_password VARCHAR(300) not null,
     addr_building_number INT,
@@ -9,7 +9,7 @@ CREATE TABLE Customer(
     phone_number VARCHAR(12) not null,
     passport_number VARCHAR(20) not null,
     passport_expiration DATE not null,
-    passport_country VARCHAR(60) not null,   --Also some long country names 
+    passport_country VARCHAR(60) not null,
     date_of_birth DATE not null,
     PRIMARY KEY(email)
 );
