@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block head %}
+<h1>Login</h1>
+{% endblock %}
+
+
+{% block body %}
+<form action="/loginAuth" method="POST">
+	<input type="text" name = "username" placeholder="username" required/> </br>
+	<input type="password" name = "password" placeholder="password" required/></br></br>
+	<label for="login_type">Login as Staff?</label>
+	<input type="checkbox" name = "login_type" value = 'on'/></br></br>
+	<input type="submit" value = Login />
+	{% if error %}
+		<p class="error"><strong>Error:</strong> {{error}}</p>
+	{% endif %}
+</form>
+</br>
+<a href="/">Go back</a>
+
+{% endblock %}
