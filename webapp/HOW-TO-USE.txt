@@ -19,6 +19,8 @@ In this virtual environment, we can use packages without having to have them ins
 
 NOTE:
 Make sure default PATH is Python 3.3+
+NOTE:
+Include files you don't want to push in .gitignore (like the vs code auxiliary files)
 
 I am working with Python 3.9x
 
