@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block head %}
+
+{% endblock %}
+
+
+{% block body %}
+<form action="/registerAuth" method="POST">
+	<input type="email" name = "email" placeholder="email" required/> </br>
+	<input type="text" name = "name" placeholder= "Full Name" required/></br>
+	<input type="password" name = "password" placeholder="password" required/></br>
+
+	<p class="message">Residence Information</p>
+
+	<input type="number" name = "addr_building_num" placeholder="Address Building Number"/></br>
+	<input type="text" name = "street" placeholder= "Street"/></br>
+	<input type="text" name = "city" placeholder= "City"/></br>
+	<input type="text" name = "state" placeholder= "State"/></br>
+
+	<p class="message">Phone Number</p>
+	<input type="text" name = "phone" placeholder= "XXX-XXX-XXXX" required/></br>
+
+	<p class="message">Passport Information</p>
+
+	<input type="text" name = "passport_num" placeholder= "Passport Number" required/></br>
+	<input type="date" name = "passport_exp" required/></br>
+	<input type="text" name = "passport_country" placeholder= "Passport Country" required/></br>
+
+	<p class="message">Date of Birth</p>
+
+	<input type="date" name = "DoB" required/></br>
+
+	<input type='hidden' name = 'type' value = 'user'/>
+	<input type="submit" value = Register />
+	{% if error %}
+		<p class="error"><strong>Error:</strong> {{error}}</p>
+	{% endif %}
+</form>
+</br></br>
+<a href="/register">Go back</a>
+{% endblock %}
