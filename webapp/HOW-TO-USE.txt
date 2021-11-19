@@ -1,0 +1,37 @@
+To streamline collaboration, best practice would be to utilize a virtual environment using Python VENV.
+
+1. In the project directory (C:\...\Air-Ticket-Database\webapp), open SHELL or TERMINAL.
+
+2. Create virtual environment using 'python -m venv venv'
+This will create a virtual environment named 'venv'.
+
+In this virtual environment, we can use packages without having to have them installed globally on our systems.
+
+3. Activate the virtual environment by typing 'venv\Scripts\activate.bat' (THIS SYNTAX IS DIFFERENT ON MAC/LINUX)
+
+4. You can verify that you are currently in the virtual environment if the command line starts with '(venv) C:\...\>' or '(venv) ~path~$'
+
+5. Once in the virtual environment, you can install all packages used by the webapp by typing 'pip install -r requirements.txt'
+
+6. To export packages (if you added more), type 'pip freeze' or 'pip freeze > requirements.txt' to output to a file.
+
+7. You can now run the app through the virtual environment. (in the environment, type 'python app.py')
+
+NOTE:
+Make sure default PATH is Python 3.3+
+
+I am working with Python 3.9x
+
+
+Highly recommend these venv tutorials to get familiarized
+
+WINDOWS:
+https://www.youtube.com/watch?v=APOPm01BVrk
+
+MAC/UNIX
+https://www.youtube.com/watch?v=Kg1Yvry_Ydk
+
+
+Also the Python Flask tutorial I watched:
+
+https://www.youtube.com/watch?v=Z1RJmh_OqeA
