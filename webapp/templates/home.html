@@ -1,16 +1,11 @@
 {% extends 'base.html' %}
 
 {% block head %}
-
+<h1>Welcome, {{username}}!</h1>
 {% endblock %}
 
 {% block body %}
-<form action="/post" method="POST">
-	<h1>Welcome {{username}}</h1>
-	<input type="text" name = "blog" placeholder="post" required/> </br>
-	<input type="submit" value = Post />
-</form>
-
+<p class="message">Here are your upcoming flights:</p>
 <style type="text/css">
 	table, th, td{
 		border: 1px solid black;
@@ -18,13 +13,23 @@
 </style>
 
 <table>
-	<th>Time</th>
-	<th>Post</th>
+	<th>Airline</th>
+	<th>Flight Number</th>
+	<th>Departure Airport</th>
+	<th>Destination Airport</th>
+	<th>Depart Timestamp</th>
+	<th>Arrival Timestamp</th>
+	<th>Flight Status</th>
 
-{% for line in posts %}
+{% for line in flights %}
 	<tr>
-		<td>{{line['ts']}}</td>
-		<td>{{line['blog_post']}}</td>
+		<td>{{line['airline_name']}}</td>
+		<td>{{line['flight_number']}}</td>
+		<td>{{line['depart_airport_code']}}</td>
+		<td>{{line['arrival_airport_code']}}</td>
+		<td>{{line['depart_ts']}}</td>
+		<td>{{line['arrival_ts']}}</td>
+		<td>{{line['flight_status']}}</td>
 	</tr>
 {% endfor %}
 </table>

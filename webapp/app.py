@@ -214,7 +214,18 @@ def registerAuth():
 # Home Route
 @app.route('/home')
 def home():
-	return "hello xd"
+	username=session['username']
+	cursor = conn.cursor()
+
+	query = "SELECT flights.airline_name, ticket.flight_number, depart_airport_code, arrival_airport_code, flights.depart_ts, arrival_ts, flight_status "\
+		"FROM purchases INNER JOIN ticket USING (ticket_id) INNER JOIN flights USING (flight_number) "\
+		"WHERE purchases.email = %s"
+
+	cursor.execute(query,(username))
+
+	data = cursor.fetchall()
+
+	return render_template('home.html', flights=data, username=username)
 
 app.secret_key = 'i dont know what this is'
 if __name__ == '__main__':
