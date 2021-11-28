@@ -13,11 +13,51 @@ conn = pymysql.connect(host='localhost',
                        charset='utf8mb4',
                        cursorclass=pymysql.cursors.DictCursor)
 
+"""
+INDEX
+"""
+
 # Index Route
 @app.route('/')
 def index():
     return render_template('index.html')
 
+# Search on Index Page
+@app.route('/IndexSearch', methods=['POST'])
+def IndexSearch():
+	# Grab information from form
+	src = request.form['src']
+	dest = request.form['dest']
+	dep_date = request.form['dep_date']
+	
+	cursor = conn.cursor()
+
+	query1 = "SELECT airline_name, flight_number, depart_ts, arrival_ts FROM flights WHERE "\
+	"depart_airport_code = (SELECT code FROM airport WHERE airport_name = %s) AND "\
+	"arrival_airport_code = (SELECT code FROM airport WHERE airport_name = %s) AND DATE(depart_ts) = %s"
+	cursor.execute(query1, (src, dest, dep_date))
+
+	data = cursor.fetchall()
+
+	# If round trip
+	if request.form.get('round_trip') == 'on':
+		arr_date = request.form['arr_date']
+
+		query2 = "SELECT airline_name, flight_number, depart_ts, arrival_ts FROM flights WHERE "\
+		"depart_airport_code = (SELECT code FROM airport WHERE airport_name = %s) AND "\
+		"arrival_airport_code = (SELECT code FROM airport WHERE airport_name = %s) AND DATE(depart_ts) = %s"
+		cursor.execute(query2, (dest, src, arr_date))
+
+		data.extend(cursor.fetchall())
+
+	
+	cursor.close()
+	error = None
+	if data:
+		return render_template('index.html', res = data)
+	else:
+		error = "No results!"
+		return render_template('index.html', error=error)
 
 """
 LOGIN
