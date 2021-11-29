@@ -20,44 +20,12 @@ INDEX
 # Index Route
 @app.route('/')
 def index():
-    return render_template('index.html')
+	# If already logged in:
+	if 'username' in session:
+		return redirect(url_for('home'))
 
-# Search on Index Page
-@app.route('/IndexSearch', methods=['POST'])
-def IndexSearch():
-	# Grab information from form
-	src = request.form['src']
-	dest = request.form['dest']
-	dep_date = request.form['dep_date']
-	
-	cursor = conn.cursor()
-
-	query1 = "SELECT airline_name, flight_number, depart_ts, arrival_ts FROM flights WHERE "\
-	"depart_airport_code = (SELECT code FROM airport WHERE airport_name = %s) AND "\
-	"arrival_airport_code = (SELECT code FROM airport WHERE airport_name = %s) AND DATE(depart_ts) = %s"
-	cursor.execute(query1, (src, dest, dep_date))
-
-	data = cursor.fetchall()
-
-	# If round trip
-	if request.form.get('round_trip') == 'on':
-		arr_date = request.form['arr_date']
-
-		query2 = "SELECT airline_name, flight_number, depart_ts, arrival_ts FROM flights WHERE "\
-		"depart_airport_code = (SELECT code FROM airport WHERE airport_name = %s) AND "\
-		"arrival_airport_code = (SELECT code FROM airport WHERE airport_name = %s) AND DATE(depart_ts) = %s"
-		cursor.execute(query2, (dest, src, arr_date))
-
-		data.extend(cursor.fetchall())
-
-	
-	cursor.close()
-	error = None
-	if data:
-		return render_template('index.html', res = data)
 	else:
-		error = "No results!"
-		return render_template('index.html', error=error)
+		return render_template('index.html')
 
 """
 LOGIN
@@ -66,6 +34,10 @@ LOGIN
 # Login Route
 @app.route('/login')
 def login():
+	# If already logged in:
+	if 'username' in session:
+		return redirect(url_for('home'))
+
 	return render_template('login.html')
 
 # User Login Authentication
@@ -77,6 +49,8 @@ def loginAuth():
 	
 	#cursor used to send queries
 	cursor = conn.cursor()
+
+	# If Staff
 	if request.form.get('login_type') == 'on':
 		#executes query
 		query = 'SELECT * FROM airline_staff WHERE username = %s and staff_password = MD5(%s)'
@@ -90,12 +64,14 @@ def loginAuth():
 			#creates a session for the the user
 			#session is a built in
 			session['username'] = username
+			session['type'] = 'staff'
 			return redirect(url_for('home'))
 		else:
 			#returns an error message to the html page
 			error = 'Invalid login or username'
 			return render_template('login.html', error=error)
-
+	
+	# If Customer
 	else:
 		#executes query
 		query = 'SELECT * FROM customer WHERE email = %s and customer_password = MD5(%s)'
@@ -109,6 +85,7 @@ def loginAuth():
 			#creates a session for the the user
 			#session is a built in
 			session['username'] = username
+			session['type'] = 'customer'
 			return redirect(url_for('home'))
 		else:
 			#returns an error message to the html page
@@ -209,12 +186,15 @@ def registerAuth():
 		cursor.close()
 		return render_template('index.html')
 
-
+"""
+HOME
+"""
 
 # Home Route
 @app.route('/home')
 def home():
 	username=session['username']
+	usertype=session['type']
 	cursor = conn.cursor()
 
 	query = "SELECT flights.airline_name, ticket.flight_number, depart_airport_code, arrival_airport_code, flights.depart_ts, arrival_ts, flight_status "\
@@ -225,7 +205,63 @@ def home():
 
 	data = cursor.fetchall()
 
-	return render_template('home.html', flights=data, username=username)
+	return render_template('home.html', flights=data, username=username, usertype=usertype)
+
+"""
+SEARCH
+"""
+# Search Page
+@app.route('/searchpage')
+def searchpage():
+	return render_template('search.html')
+
+# Search
+@app.route('/search', methods=['POST', 'GET'])
+def search():
+	# Grab information from form
+	src = request.form['src']
+	dest = request.form['dest']
+	dep_date = request.form['dep_date']
+	
+	cursor = conn.cursor()
+
+	query1 = "SELECT airline_name, flight_number, depart_ts, arrival_ts FROM flights WHERE "\
+	"depart_airport_code = (SELECT code FROM airport WHERE airport_name = %s) AND "\
+	"arrival_airport_code = (SELECT code FROM airport WHERE airport_name = %s) AND DATE(depart_ts) = %s"
+	cursor.execute(query1, (src, dest, dep_date))
+
+	data = cursor.fetchall()
+
+	# If round trip
+	if request.form.get('round_trip') == 'on':
+		arr_date = request.form['arr_date']
+
+		query2 = "SELECT airline_name, flight_number, depart_ts, arrival_ts FROM flights WHERE "\
+		"depart_airport_code = (SELECT code FROM airport WHERE airport_name = %s) AND "\
+		"arrival_airport_code = (SELECT code FROM airport WHERE airport_name = %s) AND DATE(depart_ts) = %s"
+		cursor.execute(query2, (dest, src, arr_date))
+
+		data.extend(cursor.fetchall())
+
+	
+	cursor.close()
+	error = None
+	if data:
+		return render_template('search.html', res = data)
+	else:
+		error = "No results!"
+		return render_template('search.html', error=error)
+
+"""
+LOGOUT
+"""
+
+# Logout
+@app.route('/logout')
+def logout():
+	session.pop('username')
+	return redirect('/')
+
 
 app.secret_key = 'i dont know what this is'
 if __name__ == '__main__':

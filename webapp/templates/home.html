@@ -5,34 +5,46 @@
 {% endblock %}
 
 {% block body %}
-<p class="message">Here are your upcoming flights:</p>
-<style type="text/css">
-	table, th, td{
-		border: 1px solid black;
-	}
-</style>
+{% if usertype == 'customer' %}
+	<p class="message">Here are your upcoming flights:</p>
+	<style type="text/css">
+		table, th, td{
+			border: 1px solid black;
+		}
+	</style>
 
-<table>
-	<th>Airline</th>
-	<th>Flight Number</th>
-	<th>Departure Airport</th>
-	<th>Destination Airport</th>
-	<th>Depart Timestamp</th>
-	<th>Arrival Timestamp</th>
-	<th>Flight Status</th>
+	<table>
+		<th>Airline</th>
+		<th>Flight Number</th>
+		<th>Departure Airport</th>
+		<th>Destination Airport</th>
+		<th>Depart Timestamp</th>
+		<th>Arrival Timestamp</th>
+		<th>Flight Status</th>
 
-{% for line in flights %}
-	<tr>
-		<td>{{line['airline_name']}}</td>
-		<td>{{line['flight_number']}}</td>
-		<td>{{line['depart_airport_code']}}</td>
-		<td>{{line['arrival_airport_code']}}</td>
-		<td>{{line['depart_ts']}}</td>
-		<td>{{line['arrival_ts']}}</td>
-		<td>{{line['flight_status']}}</td>
-	</tr>
-{% endfor %}
-</table>
+	{% for line in flights %}
+		<tr>
+			<td>{{line['airline_name']}}</td>
+			<td>{{line['flight_number']}}</td>
+			<td>{{line['depart_airport_code']}}</td>
+			<td>{{line['arrival_airport_code']}}</td>
+			<td>{{line['depart_ts']}}</td>
+			<td>{{line['arrival_ts']}}</td>
+			<td>{{line['flight_status']}}</td>
+		</tr>
+	{% endfor %}
+	</table>
 
-<a href="/logout">Logout</a>
+	</br>
+	</br>
+
+	<a href='/searchpage'>
+		<button>Search Future Flights</button>
+	</a>
+
+	</br>
+	</br>
+
+	<a href="/logout">Logout</a>
+{% endif %}
 {% endblock %}
