@@ -277,6 +277,7 @@ LOGOUT
 @app.route('/logout')
 def logout():
 	session.pop('username')
+	session.pop('type')
 	return redirect('/')
 
 
