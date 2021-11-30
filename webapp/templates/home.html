@@ -43,8 +43,11 @@
 	</a>
 {% endif %}
 
-</br>
-</br>
+{% if usertype == 'staff' %}
+	<a href="/staffview">View/Manage Flights</a>
+{% endif %}
 
+</br>
+</br>
 <a href="/logout">Logout</a>
 {% endblock %}

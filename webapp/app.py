@@ -270,6 +270,38 @@ def search():
 		return render_template('search.html', error=error)
 
 """
+Staff
+"""
+
+@app.route('/staffview', methods=['GET', 'POST'])
+def staffview():
+	print(f"session = {session}")
+	username=session['username']
+	airline = session["employer"]
+	cursor = conn.cursor()
+
+	all_flights = "SELECT * FROM Flights WHERE airline_name = %s"
+	cursor.execute(all_flights, (airline))
+
+	data = cursor.fetchall()
+	cursor.close()
+	return render_template('flightmanager.html', flights=data, username=username)
+
+@app.route('/staffaddflight', methods=['GET', 'POST'])
+def addflight():
+	print(f"session = {session}")
+	username=session['username']
+	airline = session["employer"]
+	cursor = conn.cursor()
+
+	all_flights = "SELECT * FROM Flights WHERE airline_name = %s"
+	cursor.execute(all_flights, (airline))
+
+	data = cursor.fetchall()
+	cursor.close()
+	return render_template('staffaddflight.html')
+
+"""
 LOGOUT
 """
 
