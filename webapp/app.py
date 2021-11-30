@@ -204,8 +204,25 @@ def home():
 	cursor.execute(query,(username))
 
 	data = cursor.fetchall()
+	display_name = 0
 
-	return render_template('home.html', flights=data, username=username, usertype=usertype)
+	if usertype=='customer':
+		query = 'SELECT customer_name FROM customer WHERE email = %s'
+
+		cursor.execute(query, (username))
+		
+		display_name = cursor.fetchone()['customer_name']
+
+	elif usertype=='staff':
+		query = 'SELECT first_name FROM airline_staff WHERE username = %s'
+
+		cursor.execute(query, (username))
+
+		display_name = cursor.fetchone()['first_name']
+
+
+	cursor.close()
+	return render_template('home.html', flights=data, display_name=display_name, usertype=usertype)
 
 """
 SEARCH
