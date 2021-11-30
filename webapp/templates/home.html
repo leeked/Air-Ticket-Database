@@ -41,13 +41,13 @@
 	<a href='/searchpage'>
 		<button>Search Future Flights</button>
 	</a>
+{% endif %}
 
-	</br>
-	</br>
-	
-	<a href="/logout">Logout</a>
-{% endif %}
 {% if usertype == 'staff' %}
-	<a href="/staffview">Manage Flights</a>
+	<a href="/staffview">View/Manage Flights</a>
 {% endif %}
+
+</br>
+</br>
+<a href="/logout">Logout</a>
 {% endblock %}

@@ -49,8 +49,6 @@ def loginAuth():
 	
 	#cursor used to send queries
 	cursor = conn.cursor()
-
-	# If Staff
 	if request.form.get('login_type') == 'on':
 		#executes query
 		query = 'SELECT * FROM airline_staff WHERE username = %s and staff_password = MD5(%s)'
@@ -58,20 +56,29 @@ def loginAuth():
 		#stores the results in a variable
 		data = cursor.fetchone()
 		#use fetchall() if you are expecting more than 1 data row
+
+		#query Works_for to get airline company user works for
+		query2 = 'SELECT * FROM Works_For WHERE username = %s'
+		cursor.execute(query2, (username))
+		data2 = cursor.fetchone()
+		print(f"data2 = {data2}")
+		#add to session object
+		session['employer'] = data2["airline_name"]
+		session['type'] = 'staff'
+		#close
 		cursor.close()
 		error = None
 		if(data):
 			#creates a session for the the user
 			#session is a built in
 			session['username'] = username
-			session['type'] = 'staff'
+
 			return redirect(url_for('home'))
 		else:
 			#returns an error message to the html page
 			error = 'Invalid login or username'
 			return render_template('login.html', error=error)
-	
-	# If Customer
+
 	else:
 		#executes query
 		query = 'SELECT * FROM customer WHERE email = %s and customer_password = MD5(%s)'
@@ -81,11 +88,12 @@ def loginAuth():
 		#use fetchall() if you are expecting more than 1 data row
 		cursor.close()
 		error = None
+		#set session type
+		session['type'] = 'customer'
 		if(data):
 			#creates a session for the the user
 			#session is a built in
 			session['username'] = username
-			session['type'] = 'customer'
 			return redirect(url_for('home'))
 		else:
 			#returns an error message to the html page
@@ -291,6 +299,10 @@ LOGOUT
 # Logout
 @app.route('/logout')
 def logout():
+	sessiontype = session['type']
+	if sessiontype == 'staff':
+		session.pop('employer')
+	session.pop('type')
 	session.pop('username')
 	return redirect('/')
 
