@@ -6,6 +6,38 @@
 
 
 {% block body %}
+<p class="message">{company}'s Flight History:</p>
+<style type="text/css">
+	table, th, td{
+		border: 1px solid black;
+	}
+</style>
+
+<table>
+	<th>Airline</th>
+	<th>Flight Number</th>
+	<th>Depart Timestamp</th>
+    <th>Airplane ID</th>
+	<th>Arrival Timestamp</th>
+    <th>Departure Airport</th>
+	<th>Destination Airport</th>
+	<th>Flight Status</th>
+    <th>Base Price</th>
+
+{% for line in flights %}
+	<tr>
+		<td>{{line['airline_name']}}</td>
+		<td>{{line['flight_number']}}</td>
+        <td>{{line['depart_ts']}}</td>
+        <td>{{line['airplane_id']}}</td>
+        <td>{{line['arrival_ts']}}</td>
+		<td>{{line['depart_airport_code']}}</td>
+		<td>{{line['arrival_airport_code']}}</td>
+		<td>{{line['flight_status']}}</td>
+        <td>{{line['base_price']}}</td>
+	</tr>
+{% endfor %}
+
 <form action="/staffaddflight" method="POST">
 	<input type="text" name = "flight_number" placeholder="Flight Number" required/> </br>
 	<input type="datetime" name = "depart_ts" placeholder="Depart Timestamp" required/></br></br>
