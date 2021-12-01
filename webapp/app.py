@@ -401,7 +401,14 @@ def staffview():
 
 @app.route('/flightreg')
 def flightreg():
-	return render_template('flightreg.html')
+	airline = session["employer"]
+	cursor=conn.cursor()
+	#get all flights in database to display
+	all_flights = "SELECT * FROM Flights WHERE airline_name = %s"
+	cursor.execute(all_flights, (airline))
+	flight_history = cursor.fetchall()
+	cursor.close()
+	return render_template('flightreg.html', company=airline, flights=flight_history)
 
 @app.route('/airplanereg', methods=['GET', 'POST'])
 def airplanereg():
@@ -537,6 +544,7 @@ def staffaddflight():
 	all_flights = "SELECT * FROM Flights WHERE airline_name = %s"
 	cursor.execute(all_flights, (airline))
 	flight_history = cursor.fetchall()
+	cursor.close()
 
 	return render_template('flightreg.html', flights=flight_history, company=airline)
 	
