@@ -31,3 +31,7 @@ THINGS TO DO
 
 2. When booking a flight:
 	*DONE* i. Create trigger such that it checks if at least 75% has been booked then increase price of relevant tickets by 25%
+
+SIDE NOTE:
+
+Also have to implement "complex constraints"
