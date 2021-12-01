@@ -1,0 +1,37 @@
+CREATE VIEW max_num_tickets AS
+SELECT flight_number, COUNT(ticket_id) AS max_num_tickets
+FROM ticket
+GROUP BY flight_number
+
+DELIMITER //
+CREATE TRIGGER update_price AFTER INSERT ON purchases
+	FOR EACH ROW
+	BEGIN
+		IF (SELECT COUNT(ticket_id) FROM purchases INNER JOIN ticket as T USING (ticket_id) WHERE T.flight_number = (SELECT flight_number FROM ticket WHERE ticket.ticket_id = NEW.ticket_id) GROUP BY T.flight_number) / (SELECT max_num_tickets FROM max_num_tickets as M WHERE M.flight_number = (SELECT flight_number FROM ticket WHERE ticket.ticket_id = NEW.ticket_id)) > 0.75 THEN
+    		UPDATE ticket
+			SET price = 1.25 * price
+			WHERE ticket.flight_number = (SELECT flight_number FROM ticket WHERE ticket.ticket_id = NEW.ticket_id);
+		END IF;
+	END
+//
+
+SELECT *
+FROM ticket
+WHERE ticket.ticket_id NOT IN 
+(SELECT purchases.ticket_id
+FROM purchases)
+
+***
+THINGS TO DO
+***
+
+1. Automation of ticket creation:
+	i. When creating a flight, automatically create tickets for the flight using a trigger
+	ii. Afterwards, automatically update VIEW max_num_tickets with new flight
+
+2. When booking a flight:
+	*DONE* i. Create trigger such that it checks if at least 75% has been booked then increase price of relevant tickets by 25%
+
+SIDE NOTE:
+
+Also have to implement "complex constraints"
