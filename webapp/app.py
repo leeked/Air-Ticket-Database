@@ -308,22 +308,32 @@ def airportreg():
 
 @app.route('/staffaddplane', methods=['GET', 'POST'])
 def staffaddplane():
+	airline = session["employer"]
+	airplane_id = request.form['airplane_id']
+	num_seats = request.form['num_seats']
 
-    airline = session["employer"]
-    airplane_id = request.form['airplane_id']
-    num_seats = request.form['num_seats']
+	cursor = conn.cursor()
+	#query to check if airplane already exists
+	check_plane = "SELECT * FROM Airplane WHERE airline_name = %s AND airplane_id = %s"
+	cursor.execute(check_plane, (airline, int(airplane_id)))
 
-    cursor = conn.cursor()
-    insert_plane = "INSERT INTO Airplane VALUES(%s, %s, %s)"
-    cursor.execute(insert_plane, (airline, int(airplane_id), int(num_seats)))
-
-    cursor.close()
-
-    return render_template('flightmanager.html')
+	#check if we get a non-empty query
+	data = cursor.fetchone()
+	if(data):
+		#if non-empty, a plane already exists with under the company 
+		error = f"This airplane already exists under {airline}"
+		return render_template('userreg.html', error = error)
+	
+	#if empty, we can add this plane into our database
+	insert_plane = "INSERT INTO Airplane VALUES(%s, %s, %s)"
+	cursor.execute(insert_plane, (airline, int(airplane_id), int(num_seats)))
+	conn.commit()
+	cursor.close()
+	return render_template('flightmanager.html')
+	
 """
 LOGOUT
 """
-
 # Logout
 @app.route('/logout')
 def logout():
