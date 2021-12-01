@@ -384,11 +384,14 @@ Staff
 
 @app.route('/staffview', methods=['GET', 'POST'])
 def staffview():
+	#debugging to see whats in session object
 	print(f"session = {session}")
+	#get username for welcome, employer to only show company information
 	username=session['username']
 	airline = session["employer"]
 	cursor = conn.cursor()
 
+	#query all flights under that Airline
 	all_flights = "SELECT * FROM Flights WHERE airline_name = %s"
 	cursor.execute(all_flights, (airline))
 
@@ -428,6 +431,7 @@ def airportreg():
 
 @app.route('/staffaddplane', methods=['GET', 'POST'])
 def staffaddplane():
+	#fetch data from form
 	airline = session["employer"]
 	airplane_id = request.form['airplane_id']
 	num_seats = request.form['num_seats']
@@ -463,6 +467,7 @@ def staffaddplane():
 
 @app.route('/staffaddairport', methods=['GET', 'POST'])
 def staffaddairport():
+	#fetch data from form
 	airport_name = request.form['airport_name']
 	airport_code = request.form['airport_code']
 	city = request.form['airport_city']
@@ -494,6 +499,46 @@ def staffaddairport():
 
 	cursor.close()
 	return render_template('airportreg.html', airports=airports)
+
+@app.route('/staffaddflight', methods=['GET', 'POST'])
+def staffaddflight():
+	airline = session["employer"]
+	#get variables from form
+	flight_number = request.form['flight_number']
+	dep_ts = request.form['depart_ts']
+	airplane_id = request.form['airplane_id']
+	arr_ts = request.form['arrival_ts']
+	dep_airport_code = request.form['depart_airport_code']
+	arr_airport_code = request.form['arrival_airport_code']
+	flight_status = request.form['flight_status']
+	base_price = request.form['base_price']
+
+	#initialize cursor to begin queries
+	cursor = conn.cursor()
+
+	#query to see if flight already exists, we know airline_name, flight_number, and depart_ts
+	# make up the primary key of Flights
+	check_flight = "SELECT * FROM Flights WHERE airline_name = %s AND flight_number = %s AND depart_ts = %s"
+	cursor.execute(check_flight, (airline, flight_number, dep_ts))
+
+	#we only need to check if its empty/non-empty
+	data = cursor.fetchone()
+
+	if(data):
+		#if data is not empty, then the flight must already exist
+		error = f"Flight {flight_number} for {airline} already exists"
+		return render_template('flightreg.html', error=error)
+	
+	#otherwise, this flight does not exist and we can add it to our database
+	new_flight = "INSERT INTO Flights VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s)"
+	cursor.execute(new_flight, (airline, flight_number, dep_ts, airplane_id, arr_ts, dep_airport_code, arr_airport_code, flight_status, base_price))
+	conn.commit()
+
+	all_flights = "SELECT * FROM Flights WHERE airline_name = %s"
+	cursor.execute(all_flights, (airline))
+	flight_history = cursor.fetchall()
+
+	return render_template('flightreg.html', flights=flight_history, company=airline)
 	
 """
 LOGOUT
