@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block head %}
+<h1>Enter Billing Information</h1>
+{% endblock %}
+
+
+{% block body %}
+<form action="/purchaseForm" method="POST">
+	<input type="email" name = "email" placeholder="Email" required/> </br></br>
+	
+	<label for'card_type'>Select Card Type</label></br>
+	<select name='card_type' id='card_type'>
+		<option value='VISA'>VISA</option>
+		<option value='American Express'>American Express</option>
+		<option value='MasterCard'>MasterCard</option>
+		<option value='Discover'>Discover</option>
+	</select></br></br>
+
+	<input type="text" name = "card_number" placeholder= "Card Number" required/></br></br>
+	
+	<input type="text" name = "name_on_card" placeholder= "Name on Card" required/></br></br>
+
+	<input type="date" name = "exp_date" placeholder= "Expiration Date" required/></br></br>
+
+	<input type='hidden' name='ticket_id' value= ticket_id />
+
+	<input type="submit" value = Submit />
+	{% if error %}
+		<p class="error"><strong>Error:</strong> {{error}}</p>
+	{% endif %}
+</form>
+</br></br>
+<a href="/purchasepage">Go back</a>
+{% endblock %}

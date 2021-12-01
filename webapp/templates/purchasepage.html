@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block head %}
+<h1>Purchase Tickets</h1>
+{% endblock %}
+
+
+{% block body %}
+<p class='message'>Search Available Tickets</p>
+<form action='/purchaseSearch' method='POST'>
+	<input type="number" name="flight_num" placeholder="Flight Number" required/>
+	<input type='submit' value = Search />
+</form>
+
+{% if searched %}
+	<style type="text/css">
+		table, th, td{
+			border: 1px solid black;
+		}
+	</style>
+
+	<table>
+		<th>Ticket ID</th>
+		<th>Airline Name</th>
+		<th>Flight Number</th>
+		<th>Depart Timestamp</th>
+
+	{% for elem in res %}
+		<tr>
+			<td>{{elem['ticket_id']}}</td>
+			<td>{{elem['airline_name']}}</td>
+			<td>{{elem['flight_number']}}</td>
+			<td>{{elem['depart_ts']}}</td>
+		</tr>
+	{% endfor %}
+	</table>
+
+{% else %}
+	<style type="text/css">
+		table, th, td{
+			border: 1px solid black;
+		}
+	</style>
+
+	<table>
+		<th>Ticket ID</th>
+		<th>Airline Name</th>
+		<th>Flight Number</th>
+		<th>Depart Timestamp</th>
+
+	{% for elem in res %}
+		<tr>
+			<td>{{elem['ticket_id']}}</td>
+			<td>{{elem['airline_name']}}</td>
+			<td>{{elem['flight_number']}}</td>
+			<td>{{elem['depart_ts']}}</td>
+		</tr>
+	{% endfor %}
+	</table>
+{% endif %}
+
+</br>
+
+<p class = "message">Purchase flight ticket here:</p>
+<form action="/purchaseTicket" method="POST">
+	<input type="number" name="ticket_id" placeholder="Ticket ID" required/>
+	<input type="submit" value = Submit />
+	{% if error %}
+		<p class="error"><strong>Error:</strong> {{error}}</p>
+	{% endif %}
+</form>
+
+</br>
+</br>
+<a href="/">Go back</a>
+
+{% endblock %}

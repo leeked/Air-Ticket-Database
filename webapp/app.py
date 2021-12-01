@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, session, url_for, redirect
 import pymysql.cursors
+from datetime import datetime
 
 app = Flask(__name__)
 
@@ -277,6 +278,104 @@ def search():
 		return render_template('search.html', error=error)
 
 """
+Customer
+"""
+
+# Purchase Page Default
+@app.route('/purchasepage')
+def purchasepage():
+	cursor = conn.cursor()
+
+	query = 'SELECT * FROM available_tickets'
+
+	cursor.execute(query)
+
+	res = cursor.fetchall()
+
+	cursor.close()
+	return render_template('purchasepage.html', res=res)
+
+@app.route('/purchaseSearch', methods=['POST'])
+def purchaseSearch():
+	flight_num = request.form['flight_num']
+	cursor = conn.cursor()
+
+	query = 'SELECT * FROM ticket WHERE flight_number = %s AND ticket.ticket_id NOT IN (SELECT purchases.ticket_id FROM purchases)'
+
+	cursor.execute(query, (flight_num))
+
+	res = cursor.fetchall()
+
+	cursor.close()
+	return render_template('purchasepage.html', res=res, searched=True)
+
+@app.route('/purchaseTicket', methods=['POST'])
+def purchaseTicket():
+	ticket_id = request.form['ticket_id']
+	cursor = conn.cursor()
+
+	query = 'SELECT * FROM available_tickets WHERE ticket_id = %s'
+
+	cursor.execute(query, (ticket_id))
+
+	res = cursor.fetchall()
+
+	cursor.close()
+
+	if res:
+		session['ticket_id'] = ticket_id
+
+		return render_template('purchaseform.html')
+	else:
+		error = 'This ticket is not available!'
+
+		return render_template('purchasepage.html', error=error)
+
+	
+	return render_template('purchaseform.html')
+
+@app.route('/purchaseForm', methods=['POST'])
+def purchaseForm():
+	email = request.form['email']
+	card_type = request.form['card_type']
+	card_number = request.form['card_number']
+	name_on_card = request.form['name_on_card']
+	exp_date = request.form['exp_date']
+	purchase_ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+	ticket_id = 0
+	purchase_price = 0
+
+	if 'ticket_id' in session:
+		ticket_id = session.pop('ticket_id')
+	else:
+		error = 'Session lost Ticket ID!'
+		return render_template('purchasepage.html', error=error)
+
+	cursor = conn.cursor()
+
+	query = 'SELECT price FROM available_tickets WHERE ticket_id = %s'
+
+	cursor.execute(query, (ticket_id))
+
+	res_price = cursor.fetchone()
+
+	if res_price:
+		purchase_price = res_price['price']
+	else:
+		error = 'This ticket is no longer available!'
+		cursor.close()
+		return render_template('purchasepage.html', error=error)
+
+	ins = 'INSERT INTO purchases VALUES(%s, %s, %s, %s, %s, %s, %s, %s)'
+
+	cursor.execute(ins, (ticket_id, email, card_type, card_number, name_on_card, exp_date, purchase_ts, purchase_price))
+	conn.commit()
+	cursor.close()
+
+	return render_template('purchasesuccess.html')
+
+
+"""
 Staff
 """
 
@@ -329,13 +428,16 @@ LOGOUT
 def logout():
 	#debugging
 	# print(f"session = {session}")
+	if 'ticket_id' in session:
+		session.pop('ticket_id')
 	if 'type' in session:
-		sessiontype = session['type']
+		sessiontype = session.pop('type')
 		if sessiontype == 'staff':
 			session.pop('employer')
-	session.pop('type')
+
 	if 'username' in session:
 		session.pop('username')
+
 	return redirect('/')
 
 
