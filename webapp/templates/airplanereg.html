@@ -6,6 +6,34 @@
 
 
 {% block body %}
+<p class="message">Here are {{company}}'s owned Airplanes:</p>
+<style type="text/css">
+	table, th, td{
+		border: 1px solid black;
+	}
+</style>
+
+<table>
+	<!-- <th>Airline</th> -->
+    <th>Airplane ID</th>
+	<th>Number of Seats</th>
+
+
+{% for line in planes %}
+	<tr>
+		<!-- <td>{{line['airline_name']}}</td> -->
+        <td>{{line['airplane_id']}}</td>
+        <td>{{line['num_seats']}}</td>
+	</tr>
+{% endfor %}
+</table>
+
+<p class="message">Add an airplane below:</p>
+<style type="text/css">
+	table, th, td{
+		border: 1px solid black;
+	}
+</style>
 
 <form action="/staffaddplane" method="POST">
     <input type="number" name = "airplane_id" placeholder="Airplane ID" required/> </br></br>

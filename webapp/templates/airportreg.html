@@ -6,12 +6,41 @@
 
 
 {% block body %}
+<!-- <p class="message">Add an airport to {{company}}'s associated Airports:</p> -->
+<p class="message">Here are all of the Airports in the System:</p>
+<style type="text/css">
+	table, th, td{
+		border: 1px solid black;
+	}
+</style>
 
-<form action="/staffaddplane" method="POST">
+<table>
+	<th>Airport</th>
+    <th>Airport Code</th>
+	<th>City</th>
+
+
+{% for line in airports %}
+	<tr>
+		<td>{{line['airport_name']}}</td>
+        <td>{{line['code']}}</td>
+        <td>{{line['city']}}</td>
+	</tr>
+{% endfor %}
+</table>
+
+<p class="message">Add an airport to the System:</p>
+<style type="text/css">
+	table, th, td{
+		border: 1px solid black;
+	}
+</style>
+
+<form action="/staffaddairport" method="POST">
     <input type="text" name = "airport_name" placeholder="Airport Name" required/> </br></br>
-    <input type="number" name = "airport_id" placeholder="Airport ID" required/> </br></br>
-    <input type="text" name = "city" placeholder="Airport City" required/> </br></br>
-	<input type="submit" value = Add/>
+    <input type="number" name = "airport_code" placeholder="Airport Code" required/> </br></br>
+    <input type="text" name = "airport_city" placeholder="Airport City" required/> </br></br>
+	<input type="submit" value = Add>
 	{% if error %}
 		<p class="error"><strong>Error:</strong> {{error}}</p>
 	{% endif %}

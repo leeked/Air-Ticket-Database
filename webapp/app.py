@@ -400,13 +400,31 @@ def staffview():
 def flightreg():
 	return render_template('flightreg.html')
 
-@app.route('/airplanereg')
+@app.route('/airplanereg', methods=['GET', 'POST'])
 def airplanereg():
-	return render_template('airplanereg.html')
+	airline = session["employer"]
+	cursor = conn.cursor()
+	#query to display all currently owned airplanes for company
+	get_planes = "SELECT airplane_id, num_seats FROM Airplane WHERE airline_name = %s"
+	cursor.execute(get_planes, (airline))
+
+	#check if we get a non-empty query
+	planes = cursor.fetchall()
+	cursor.close()
+	return render_template('airplanereg.html', planes=planes, company=airline)
 
 @app.route('/airportreg')
 def airportreg():
-	return render_template('airportreg.html')
+	cursor = conn.cursor()
+	#query to display all Airports in system
+	get_airports = "SELECT * FROM Airport"
+	cursor.execute(get_airports)
+
+	#check if we get a non-empty query
+	airports = cursor.fetchall()
+	cursor.close()
+
+	return render_template('airportreg.html', airports=airports)
 
 @app.route('/staffaddplane', methods=['GET', 'POST'])
 def staffaddplane():
@@ -424,14 +442,58 @@ def staffaddplane():
 	if(data):
 		#if non-empty, a plane already exists with under the company 
 		error = f"This airplane already exists under {airline}"
-		return render_template('userreg.html', error = error)
+		return render_template('airplanereg.html', error = error)
 	
 	#if empty, we can add this plane into our database
 	insert_plane = "INSERT INTO Airplane VALUES(%s, %s, %s)"
 	cursor.execute(insert_plane, (airline, int(airplane_id), int(num_seats)))
 	conn.commit()
+
+
+	#query to display all currently owned airplanes for company
+	get_planes = "SELECT airplane_id, num_seats FROM Airplane WHERE airline_name = %s"
+	cursor.execute(get_planes, (airline))
+
+	#check if we get a non-empty query
+	planes = cursor.fetchall()
+
 	cursor.close()
-	return render_template('flightmanager.html')
+
+	return render_template('airplanereg.html', planes=planes, company=airline)
+
+@app.route('/staffaddairport', methods=['GET', 'POST'])
+def staffaddairport():
+	airport_name = request.form['airport_name']
+	airport_code = request.form['airport_code']
+	city = request.form['airport_city']
+
+	cursor = conn.cursor()
+	#query to check if airport already exists
+	check_airport = "SELECT * FROM Airport WHERE code = %s"
+	cursor.execute(check_airport, (airport_code))
+
+	#check if we get a non-empty query
+	data = cursor.fetchone()
+
+	if(data):
+		#if non-empty, a plane already exists with under the company 
+		error = f"An airport already exists with code {airport_code}"
+		return render_template('airportreg.html', error = error)
+	
+	#if empty, we can add this plane into our database
+	insert_plane = "INSERT INTO Airport VALUES(%s, %s, %s)"
+	cursor.execute(insert_plane, (int(airport_code), airport_name, city))
+	conn.commit()
+
+	#query to display all Airports in system
+	get_airports = "SELECT * FROM Airport"
+	cursor.execute(get_airports)
+
+	#check if we get a non-empty query
+	airports = cursor.fetchall()
+
+	cursor.close()
+	return render_template('airportreg.html', airports=airports)
 	
 """
 LOGOUT
