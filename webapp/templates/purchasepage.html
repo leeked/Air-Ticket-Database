@@ -24,6 +24,7 @@
 		<th>Airline Name</th>
 		<th>Flight Number</th>
 		<th>Depart Timestamp</th>
+		<th>Ticket Price</th>
 
 	{% for elem in res %}
 		<tr>
@@ -31,6 +32,7 @@
 			<td>{{elem['airline_name']}}</td>
 			<td>{{elem['flight_number']}}</td>
 			<td>{{elem['depart_ts']}}</td>
+			<td>{{elem['price']}}</td>
 		</tr>
 	{% endfor %}
 	</table>
@@ -47,6 +49,7 @@
 		<th>Airline Name</th>
 		<th>Flight Number</th>
 		<th>Depart Timestamp</th>
+		<th>Ticket Price</th>
 
 	{% for elem in res %}
 		<tr>
@@ -54,6 +57,7 @@
 			<td>{{elem['airline_name']}}</td>
 			<td>{{elem['flight_number']}}</td>
 			<td>{{elem['depart_ts']}}</td>
+			<td>{{elem['price']}}</td>
 		</tr>
 	{% endfor %}
 	</table>
