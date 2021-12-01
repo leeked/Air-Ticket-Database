@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block head %}
+
+{% endblock %}
+
+
+{% block body %}
+
+<form action="/staffaddplane" method="POST">
+    <input type="text" name = "airport_name" placeholder="Airport Name" required/> </br></br>
+    <input type="number" name = "airport_id" placeholder="Airport ID" required/> </br></br>
+    <input type="text" name = "city" placeholder="Airport City" required/> </br></br>
+	<input type="submit" value = Add/>
+	{% if error %}
+		<p class="error"><strong>Error:</strong> {{error}}</p>
+	{% endif %}
+</form>
+</br></br>
+
+<a href="/staffview">Go back</a>
+{% endblock %}
