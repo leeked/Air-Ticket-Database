@@ -293,6 +293,11 @@ def purchasepage():
 	res = cursor.fetchall()
 
 	cursor.close()
+
+	if 'error' in session:
+		error = session.pop('error')
+		return render_template('purchasepage.html', res=res, searched=True, error=error)
+
 	return render_template('purchasepage.html', res=res)
 
 @app.route('/purchaseSearch', methods=['POST'])
@@ -307,6 +312,7 @@ def purchaseSearch():
 	res = cursor.fetchall()
 
 	cursor.close()
+
 	return render_template('purchasepage.html', res=res, searched=True)
 
 @app.route('/purchaseTicket', methods=['POST'])
@@ -328,11 +334,8 @@ def purchaseTicket():
 		return render_template('purchaseform.html')
 	else:
 		error = 'This ticket is not available!'
-
-		return render_template('purchasepage.html', error=error)
-
-	
-	return render_template('purchaseform.html')
+		session['error'] = error
+		return redirect(url_for('purchasepage'))
 
 @app.route('/purchaseForm', methods=['POST'])
 def purchaseForm():
@@ -428,6 +431,8 @@ LOGOUT
 def logout():
 	#debugging
 	# print(f"session = {session}")
+	if 'error' in session:
+		session.pop('error')
 	if 'ticket_id' in session:
 		session.pop('ticket_id')
 	if 'type' in session:
