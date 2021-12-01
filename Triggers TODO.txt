@@ -3,11 +3,20 @@ SELECT flight_number, COUNT(ticket_id) AS max_num_tickets
 FROM ticket
 GROUP BY flight_number
 
+CREATE VIEW purchased_num_ticket_by_flightnum AS
+SELECT flight_number, COUNT(ticket_id) as num_purchased
+FROM purchases INNER JOIN ticket USING (ticket_id)
+GROUP BY flight_number
+
+
 DELIMITER //
 CREATE TRIGGER update_price AFTER INSERT ON purchases
 	FOR EACH ROW
 	BEGIN
-		IF (SELECT COUNT(ticket_id) FROM purchases INNER JOIN ticket as T USING (ticket_id) WHERE T.flight_number = (SELECT flight_number FROM ticket WHERE ticket.ticket_id = NEW.ticket_id) GROUP BY T.flight_number) / (SELECT max_num_tickets FROM max_num_tickets as M WHERE M.flight_number = (SELECT flight_number FROM ticket WHERE ticket.ticket_id = NEW.ticket_id)) > 0.75 THEN
+		IF (SELECT COUNT(ticket_id) FROM purchases INNER JOIN ticket as T USING (ticket_id) WHERE T.flight_number = (SELECT flight_number FROM ticket WHERE ticket.ticket_id = NEW.ticket_id) GROUP BY T.flight_number) / (SELECT max_num_tickets FROM max_num_tickets as M WHERE M.flight_number = (SELECT flight_number FROM ticket WHERE ticket.ticket_id = NEW.ticket_id)) > 0.75 
+		AND
+		(SELECT DISTINCT price FROM ticket WHERE (SELECT flight_number FROM ticket WHERE ticket.ticket_id = NEW.ticket_id) = ticket.flight_number) = (SELECT base_price FROM flights WHERE (SELECT flight_number FROM ticket WHERE ticket.ticket_id = NEW.ticket_id) = flights.flight_number)
+		THEN
     		UPDATE ticket
 			SET price = 1.25 * price
 			WHERE ticket.flight_number = (SELECT flight_number FROM ticket WHERE ticket.ticket_id = NEW.ticket_id);
@@ -27,7 +36,6 @@ THINGS TO DO
 
 1. Automation of ticket creation:
 	i. When creating a flight, automatically create tickets for the flight using a trigger
-	ii. Afterwards, automatically update VIEW max_num_tickets with new flight
 
 2. When booking a flight:
 	*DONE* i. Create trigger such that it checks if at least 75% has been booked then increase price of relevant tickets by 25%
