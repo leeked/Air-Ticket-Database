@@ -294,56 +294,32 @@ def staffview():
 	cursor.close()
 	return render_template('flightmanager.html', flights=data, username=username)
 
-@app.route('/staffaction')
-def staffaction():
-	return render_template("staffaddflight.html")
+@app.route('/flightreg')
+def flightreg():
+	return render_template('flightreg.html')
 
-@app.route('/staffaddflight', methods=['GET', 'POST'])
-def staffaddflight():
-	#request inputs from form
-	flight_number = request.form['flight_number']
-	depart_ts = request.form['depart_ts']
-	airplane_id = request.form['airplane_id']
-	arrival_ts = request.form['arrival_ts']
-	depart_airport_code = request.form['depart_airport_code']
-	arrival_airport_code = request.form['arrival_airport_code']
-	flight_status = request.form['flight_status']
-	base_price = request.form['base_price']
+@app.route('/airplanereg')
+def airplanereg():
+	return render_template('airplanereg.html')
 
-	#debugging
-	# print(f"type of depart_ts: {type(depart_ts)}")
-	# print(f"session = {session}")
+@app.route('/airportreg')
+def airportreg():
+	return render_template('airportreg.html')
 
-	username=session['username']
-	airline = session["employer"]
-	cursor = conn.cursor()
-
-	#get all flights that match the same airline as the current worker
-	all_flights = "SELECT * FROM Flights WHERE airline_name = %s"
-	cursor.execute(all_flights, (airline))
-
-	#need to fix query, assuming its an issue with datetime type
-	data = cursor.fetchall()
-	insert = f"INSERT INTO Flights VALUES( {airline}, {flight_number}, {depart_ts}, {airplane_id}, {arrival_ts}, {depart_airport_code}, {arrival_airport_code}, {flight_status}, {base_price})"
-	cursor.execute(insert)
-
-	
-	cursor.close()
-	return render_template('flightmanager.html')
-
-@app.route('/staffaddplane')
+@app.route('/staffaddplane', methods=['GET', 'POST'])
 def staffaddplane():
 
-	airline = session["employer"]
-	airplane_id = request.form['airplane_id']
-	num_seats = request.form['num_seats']
+    airline = session["employer"]
+    airplane_id = request.form['airplane_id']
+    num_seats = request.form['num_seats']
 
-	insert_plane = "INSERT INTO Airplane VALUES(%s, %i, %i)"
+    cursor = conn.cursor()
+    insert_plane = "INSERT INTO Airplane VALUES(%s, %s, %s)"
+    cursor.execute(insert_plane, (airline, int(airplane_id), int(num_seats)))
 
-	return render_template('index.html')
-	
+    cursor.close()
 
-
+    return render_template('flightmanager.html')
 """
 LOGOUT
 """
@@ -353,12 +329,13 @@ LOGOUT
 def logout():
 	#debugging
 	# print(f"session = {session}")
-	sessiontype = session['type']
-	if sessiontype == 'staff':
-		session.pop('employer')
+	if 'type' in session:
+		sessiontype = session['type']
+		if sessiontype == 'staff':
+			session.pop('employer')
 	session.pop('type')
-	session.pop('username')
-	session.pop('type')
+	if 'username' in session:
+		session.pop('username')
 	return redirect('/')
 
 
