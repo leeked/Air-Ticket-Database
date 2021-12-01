@@ -125,7 +125,6 @@ def userreg():
 def registerAuth():
 	# Determine what kind of user (staff or customer/user)
 	regtype = request.form['type']
-
 	# For Staff
 	if regtype == 'staff':
 		#grabs information from the forms
@@ -295,19 +294,55 @@ def staffview():
 	cursor.close()
 	return render_template('flightmanager.html', flights=data, username=username)
 
+@app.route('/staffaction')
+def staffaction():
+	return render_template("staffaddflight.html")
+
 @app.route('/staffaddflight', methods=['GET', 'POST'])
-def addflight():
-	print(f"session = {session}")
+def staffaddflight():
+	#request inputs from form
+	flight_number = request.form['flight_number']
+	depart_ts = request.form['depart_ts']
+	airplane_id = request.form['airplane_id']
+	arrival_ts = request.form['arrival_ts']
+	depart_airport_code = request.form['depart_airport_code']
+	arrival_airport_code = request.form['arrival_airport_code']
+	flight_status = request.form['flight_status']
+	base_price = request.form['base_price']
+
+	#debugging
+	# print(f"type of depart_ts: {type(depart_ts)}")
+	# print(f"session = {session}")
+
 	username=session['username']
 	airline = session["employer"]
 	cursor = conn.cursor()
 
+	#get all flights that match the same airline as the current worker
 	all_flights = "SELECT * FROM Flights WHERE airline_name = %s"
 	cursor.execute(all_flights, (airline))
 
+	#need to fix query, assuming its an issue with datetime type
 	data = cursor.fetchall()
+	insert = f"INSERT INTO Flights VALUES( {airline}, {flight_number}, {depart_ts}, {airplane_id}, {arrival_ts}, {depart_airport_code}, {arrival_airport_code}, {flight_status}, {base_price})"
+	cursor.execute(insert)
+
+	
 	cursor.close()
-	return render_template('staffaddflight.html')
+	return render_template('flightmanager.html')
+
+@app.route('/staffaddplane')
+def staffaddplane():
+
+	airline = session["employer"]
+	airplane_id = request.form['airplane_id']
+	num_seats = request.form['num_seats']
+
+	insert_plane = "INSERT INTO Airplane VALUES(%s, %i, %i)"
+
+	return render_template('index.html')
+	
+
 
 """
 LOGOUT
@@ -316,6 +351,8 @@ LOGOUT
 # Logout
 @app.route('/logout')
 def logout():
+	#debugging
+	# print(f"session = {session}")
 	sessiontype = session['type']
 	if sessiontype == 'staff':
 		session.pop('employer')
