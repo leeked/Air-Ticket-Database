@@ -203,6 +203,10 @@ HOME
 def home():
 	username=session['username']
 	usertype=session['type']
+
+	if 'error' in session:
+		session.pop('error')
+
 	cursor = conn.cursor()
 
 	query = "SELECT flights.airline_name, ticket.flight_number, depart_airport_code, arrival_airport_code, flights.depart_ts, arrival_ts, flight_status "\
@@ -352,7 +356,8 @@ def purchaseForm():
 		ticket_id = session.pop('ticket_id')
 	else:
 		error = 'Session lost Ticket ID!'
-		return render_template('purchasepage.html', error=error)
+		session['error'] = error
+		return redirect(url_for('purchasepage'))
 
 	cursor = conn.cursor()
 
@@ -367,7 +372,8 @@ def purchaseForm():
 	else:
 		error = 'This ticket is no longer available!'
 		cursor.close()
-		return render_template('purchasepage.html', error=error)
+		session['error'] = error
+		return redirect(url_for('purchasepage'))
 
 	ins = 'INSERT INTO purchases VALUES(%s, %s, %s, %s, %s, %s, %s, %s)'
 
@@ -377,6 +383,95 @@ def purchaseForm():
 
 	return render_template('purchasesuccess.html')
 
+
+# Rating
+@app.route('/reviewpage')
+def reviewpage():
+	username=session['username']
+	curr_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+	cursor = conn.cursor()
+
+	get_prev_flights = 'SELECT flights.airline_name, flights.flight_number, flights.depart_ts, flights.arrival_ts, sell_price '\
+	    'FROM flights INNER JOIN ticket USING (flight_number) INNER JOIN purchases USING (ticket_id) '\
+		'WHERE email = %s AND arrival_ts < %s'
+	
+	cursor.execute(get_prev_flights, (username,curr_date))
+
+	res = cursor.fetchall()
+
+	get_prev_reviews = 'SELECT airline_name, flight_number, depart_ts, rating, comments FROM reviews WHERE email = %s'
+
+	cursor.execute(get_prev_reviews, (username))
+
+	reviews = cursor.fetchall()
+
+	cursor.close()
+
+	if 'error' in session:
+		error = session.pop('error')
+		return render_template('reviewpage.html', res=res, reviews=reviews, error=error)
+
+	return render_template('reviewpage.html', res=res, reviews=reviews)
+
+@app.route('/leaverating', methods=['POST'])
+def leaverating():
+	username=session['username']
+	airline_name=request.form['airline_name']
+	flight_num=request.form['flight_num']
+	depart_ts=request.form['depart_ts']
+	rating=request.form['rating']
+	review=request.form['review']
+	curr_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+	cursor = conn.cursor()
+
+	# Get real depart_ts
+	get_ts = 'SELECT depart_ts FROM flights WHERE airline_name = %s AND flight_number = %s AND DATE(depart_ts) = %s'
+
+	cursor.execute(get_ts, (airline_name, flight_num, depart_ts))
+
+	ts = cursor.fetchone()
+
+	depart_ts = ts['depart_ts']
+
+	# Check if flight is applicable to user review
+	check = 'SELECT * FROM flights INNER JOIN ticket USING (flight_number) INNER JOIN purchases USING (ticket_id) '\
+		'WHERE email = %s AND arrival_ts < %s AND flights.airline_name = %s AND flights.flight_number = %s AND flights.depart_ts = %s'
+
+	cursor.execute(check, (username, curr_date, airline_name, flight_num, depart_ts))
+
+	res = cursor.fetchone()
+
+	if not res:
+		error = 'Invalid Flight'
+		
+		cursor.close()
+		session['error'] = error
+		return redirect(url_for('reviewpage'))
+
+	# Check if the user already reviewed this flight
+	check2 = 'SELECT * FROM reviews '\
+		'WHERE email = %s AND airline_name = %s AND flight_number = %s AND depart_ts = %s'
+
+	cursor.execute(check2, (username, airline_name, flight_num, depart_ts))
+
+	res2 = cursor.fetchone()
+
+	if res2:
+		error = 'You have already reviewed this flight!'
+		
+		cursor.close()
+		session['error'] = error
+		return redirect(url_for('reviewpage'))
+
+	ins = 'INSERT INTO reviews VALUES(%s, %s, %s, %s, %s, %s)'
+
+	cursor.execute(ins, (username, airline_name, flight_num, depart_ts, rating, review))
+	conn.commit()
+	cursor.close()
+
+	return redirect(url_for('reviewpage'))
 
 """
 Staff
