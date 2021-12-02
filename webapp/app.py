@@ -204,9 +204,11 @@ def home():
 	username=session['username']
 	usertype=session['type']
 
+	# Cleanup for straggling errors
 	if 'error' in session:
 		session.pop('error')
 
+	# Show all upcoming flights
 	cursor = conn.cursor()
 
 	query = "SELECT flights.airline_name, ticket.flight_number, depart_airport_code, arrival_airport_code, flights.depart_ts, arrival_ts, flight_status "\
@@ -218,6 +220,7 @@ def home():
 	data = cursor.fetchall()
 	display_name = 0
 
+	# Change display name based on user type
 	if usertype=='customer':
 		query = 'SELECT customer_name FROM customer WHERE email = %s'
 
@@ -290,6 +293,7 @@ Customer
 def purchasepage():
 	cursor = conn.cursor()
 
+	# Display all available tickets for purchase
 	query = 'SELECT * FROM available_tickets'
 
 	cursor.execute(query)
@@ -306,6 +310,7 @@ def purchasepage():
 
 @app.route('/purchaseSearch', methods=['POST'])
 def purchaseSearch():
+	# Allows user to search for tickets based on a user input flight number
 	flight_num = request.form['flight_num']
 	cursor = conn.cursor()
 
@@ -321,6 +326,8 @@ def purchaseSearch():
 
 @app.route('/purchaseTicket', methods=['POST'])
 def purchaseTicket():
+	# Allows the user to specify which ticket they would like to purchase.
+	# If that ticket is unavailable, the page will display an error saying so
 	ticket_id = request.form['ticket_id']
 	cursor = conn.cursor()
 
@@ -343,6 +350,7 @@ def purchaseTicket():
 
 @app.route('/purchaseForm', methods=['POST'])
 def purchaseForm():
+	# Finalizes purchase of ticket
 	email = request.form['email']
 	card_type = request.form['card_type']
 	card_number = request.form['card_number']
@@ -352,6 +360,7 @@ def purchaseForm():
 	ticket_id = 0
 	purchase_price = 0
 
+	# Grab ticket_id from session 'cookie'
 	if 'ticket_id' in session:
 		ticket_id = session.pop('ticket_id')
 	else:
@@ -361,6 +370,8 @@ def purchaseForm():
 
 	cursor = conn.cursor()
 
+	# A checkpoint that serves both as a last minute availability check
+	# and a query for the sales price of the ticket
 	query = 'SELECT price FROM available_tickets WHERE ticket_id = %s'
 
 	cursor.execute(query, (ticket_id))
@@ -387,6 +398,7 @@ def purchaseForm():
 # Rating
 @app.route('/reviewpage')
 def reviewpage():
+	# Displays all flights the user is able to rate and review
 	username=session['username']
 	curr_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -399,7 +411,8 @@ def reviewpage():
 	cursor.execute(get_prev_flights, (username,curr_date))
 
 	res = cursor.fetchall()
-
+	
+	# Displays all ratings and reviews the user has made in the past
 	get_prev_reviews = 'SELECT airline_name, flight_number, depart_ts, rating, comments FROM reviews WHERE email = %s'
 
 	cursor.execute(get_prev_reviews, (username))
@@ -465,6 +478,7 @@ def leaverating():
 		session['error'] = error
 		return redirect(url_for('reviewpage'))
 
+	# Finalize rating and insert into table
 	ins = 'INSERT INTO reviews VALUES(%s, %s, %s, %s, %s, %s)'
 
 	cursor.execute(ins, (username, airline_name, flight_num, depart_ts, rating, review))
