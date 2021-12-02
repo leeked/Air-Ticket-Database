@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+
+{% block head %}
+<h1>Rate Your Flights</h1>
+{% endblock %}
+
+{% block body %}
+<p class='message'>Review A Flight:</p>
+<form action='/leaverating' method='POST'>
+	<input type="text" name="airline_name" placeholder="Airline Name" required/>
+	<input type="number" name="flight_num" placeholder="Flight Number" required/></br>
+	<label for='depart_ts'>Departure Date</label></br>
+	<input type="date" name="depart_ts" required/>
+
+	</br></br>
+	<label for='rating'>Rating (0 - 10)</label></br>
+	<input type='range' id='rating' name='rating' min='0' max='10' required/></br>
+	<label for='review'>Review</label></br>
+	<input type='text' name='review' maxlength='100' required/>
+	</br></br>
+
+	<input type='submit' value = Submit />
+	{% if error %}
+		<p class="error"><strong>Error:</strong> {{error}}</p>
+	{% endif %}
+</form>
+</br>
+<style type="text/css">
+	table, th, td{
+		border: 1px solid black;
+	}
+</style>
+
+<table>
+	<th>Airline Name</th>
+	<th>Flight Number</th>
+	<th>Depart Timestamp</th>
+	<th>Arrival Timestamp</th>
+	<th>Purchased Price</th>
+
+{% for elem in res %}
+	<tr>
+		<td>{{elem['airline_name']}}</td>
+		<td>{{elem['flight_number']}}</td>
+		<td>{{elem['depart_ts']}}</td>
+		<td>{{elem['arrival_ts']}}</td>
+		<td>{{elem['sell_price']}}</td>
+	</tr>
+{% endfor %}
+</table>
+
+</br>
+
+<p class='message'>Your past reviews:</p>
+<style type="text/css">
+	table, th, td{
+		border: 1px solid black;
+	}
+</style>
+
+<table>
+	<th>Airline Name</th>
+	<th>Flight Number</th>
+	<th>Depart Timestamp</th>
+	<th>Rating</th>
+	<th>Review</th>
+
+{% for elem in reviews %}
+	<tr>
+		<td>{{elem['airline_name']}}</td>
+		<td>{{elem['flight_number']}}</td>
+		<td>{{elem['depart_ts']}}</td>
+		<td>{{elem['rating']}}</td>
+		<td>{{elem['comments']}}</td>
+	</tr>
+{% endfor %}
+</table>
+
+</br>
+</br>
+<a href="/">Go back</a>
+
+{% endblock %}
