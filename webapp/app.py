@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, session, url_for, redirect
+from flask import Flask, render_template, request, session, url_for, redirect, abort
 import pymysql.cursors
 import datetime
 
@@ -242,16 +242,21 @@ def home():
 	return render_template('home.html', flights=data, display_name=display_name, usertype=usertype)
 
 """
-SEARCH
+Customer
 """
+
 # Search Page
 @app.route('/searchpage')
 def searchpage():
+	if session['type'] == 'staff':
+		abort(401)
 	return render_template('search.html')
 
 # Search
 @app.route('/search', methods=['POST', 'GET'])
 def search():
+	if session['type'] == 'staff':
+		abort(401)
 	# Grab information from form
 	src = request.form['src']
 	dest = request.form['dest']
@@ -286,13 +291,11 @@ def search():
 		error = "No results!"
 		return render_template('search.html', error=error)
 
-"""
-Customer
-"""
-
 # Purchase Page Default
 @app.route('/purchasepage')
 def purchasepage():
+	if session['type'] == 'staff':
+		abort(401)
 	cursor = conn.cursor()
 
 	# Display all available tickets for purchase
@@ -312,6 +315,8 @@ def purchasepage():
 
 @app.route('/purchaseSearch', methods=['POST'])
 def purchaseSearch():
+	if session['type'] == 'staff':
+		abort(401)
 	# Allows user to search for tickets based on a user input flight number
 	flight_num = request.form['flight_num']
 	cursor = conn.cursor()
@@ -328,6 +333,8 @@ def purchaseSearch():
 
 @app.route('/purchaseTicket', methods=['POST'])
 def purchaseTicket():
+	if session['type'] == 'staff':
+		abort(401)
 	# Allows the user to specify which ticket they would like to purchase.
 	# If that ticket is unavailable, the page will display an error saying so
 	ticket_id = request.form['ticket_id']
@@ -352,6 +359,8 @@ def purchaseTicket():
 
 @app.route('/purchaseForm', methods=['POST'])
 def purchaseForm():
+	if session['type'] == 'staff':
+		abort(401)
 	# Finalizes purchase of ticket
 	email = request.form['email']
 	card_type = request.form['card_type']
@@ -400,6 +409,8 @@ def purchaseForm():
 # Rating
 @app.route('/reviewpage')
 def reviewpage():
+	if session['type'] == 'staff':
+		abort(401)
 	# Displays all flights the user is able to rate and review
 	username=session['username']
 	curr_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -431,6 +442,8 @@ def reviewpage():
 
 @app.route('/leaverating', methods=['POST'])
 def leaverating():
+	if session['type'] == 'staff':
+		abort(401)
 	username=session['username']
 	airline_name=request.form['airline_name']
 	flight_num=request.form['flight_num']
@@ -492,6 +505,8 @@ def leaverating():
 # View Spending
 @app.route('/viewspend', methods=['POST', 'GET'])
 def viewspend():
+	if session['type'] == 'staff':
+		abort(401)
 	username=session['username']
 
 	cursor = conn.cursor()
@@ -562,6 +577,8 @@ Staff
 
 @app.route('/staffview', methods=['GET', 'POST'])
 def staffview():
+	if session['type'] == 'customer':
+		abort(401)
 	#debugging to see whats in session object
 	print(f"session = {session}")
 	#get username for welcome, employer to only show company information
@@ -579,10 +596,14 @@ def staffview():
 
 @app.route('/flightreg')
 def flightreg():
+	if session['type'] == 'customer':
+		abort(401)
 	return render_template('flightreg.html')
 
 @app.route('/airplanereg', methods=['GET', 'POST'])
 def airplanereg():
+	if session['type'] == 'customer':
+		abort(401)
 	airline = session["employer"]
 	cursor = conn.cursor()
 	#query to display all currently owned airplanes for company
@@ -596,6 +617,8 @@ def airplanereg():
 
 @app.route('/airportreg')
 def airportreg():
+	if session['type'] == 'customer':
+		abort(401)
 	cursor = conn.cursor()
 	#query to display all Airports in system
 	get_airports = "SELECT * FROM Airport"
@@ -609,6 +632,8 @@ def airportreg():
 
 @app.route('/staffaddplane', methods=['GET', 'POST'])
 def staffaddplane():
+	if session['type'] == 'customer':
+		abort(401)
 	#fetch data from form
 	airline = session["employer"]
 	airplane_id = request.form['airplane_id']
@@ -645,6 +670,8 @@ def staffaddplane():
 
 @app.route('/staffaddairport', methods=['GET', 'POST'])
 def staffaddairport():
+	if session['type'] == 'customer':
+		abort(401)
 	#fetch data from form
 	airport_name = request.form['airport_name']
 	airport_code = request.form['airport_code']
@@ -680,6 +707,8 @@ def staffaddairport():
 
 @app.route('/staffaddflight', methods=['GET', 'POST'])
 def staffaddflight():
+	if session['type'] == 'customer':
+		abort(401)
 	airline = session["employer"]
 	#get variables from form
 	flight_number = request.form['flight_number']
