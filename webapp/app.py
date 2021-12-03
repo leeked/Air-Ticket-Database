@@ -116,7 +116,29 @@ def register():
 # Register as Staff
 @app.route('/staffreg')
 def staffreg():
-	return render_template('staffreg.html')
+	# Grab existing airlines
+
+	cursor = conn.cursor()
+
+	query = 'SELECT airline_name FROM airline'
+	cursor.execute(query)
+
+	airlines = cursor.fetchall()
+
+	# Patching for wonky space handling by html
+	for val in airlines:
+		val['visual'] = val['airline_name']
+		val['airline_name'] = val['airline_name'].replace(' ', '&nbsp;')
+
+	cursor.close()
+
+	print(airlines)
+
+	if 'error' in session:
+		error = session.pop('error')
+		return render_template('staffreg.html', error=error, airlines=airlines)
+
+	return render_template('staffreg.html', airlines=airlines)
 
 # Register as User
 @app.route('/userreg')
@@ -136,6 +158,9 @@ def registerAuth():
 		fname = request.form['fname'].replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")
 		lname = request.form['lname'].replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")
 		DoB = request.form['DoB']
+		airline_employer = request.form['employer'].replace('&nbsp;', ' ')
+
+		print(airline_employer)
 
 		#cursor used to send queries
 		cursor = conn.cursor()
@@ -144,16 +169,30 @@ def registerAuth():
 		cursor.execute(query, (username))
 		#stores the results in a variable
 		data = cursor.fetchone()
+
 		#use fetchall() if you are expecting more than 1 data row
 		error = None
 		if(data):
 			#If the previous query returns data, then user exists
 			error = "This user already exists"
-			return render_template('staffreg.html', error = error)
+			session['error'] = error
+			return redirect(url_for('staffreg'))
 		else:
 			ins = "INSERT INTO airline_staff VALUES(%s, MD5(%s), %s, %s, %s)"
 			cursor.execute(ins, (username, password, fname, lname, DoB))
 			conn.commit()
+
+			# Insert into works_for new registered employee
+			empl_check = 'SELECT * FROM works_for WHERE username = %s AND airline_name = %s'
+			cursor.execute(empl_check, (username,airline_employer))
+
+			check_res = cursor.fetchone()
+
+			# If not already registered into table, create entry
+			if not check_res:
+				ins_wf = 'INSERT INTO works_for VALUES(%s, %s)'
+				cursor.execute(ins_wf, (username, airline_employer))
+				conn.commit()
 			cursor.close()
 			return render_template('index.html')
 
@@ -231,6 +270,9 @@ def home():
 		
 		display_name = cursor.fetchone()['customer_name']
 
+		cursor.close()
+		return render_template('home.html', customer_flights=customer_flights, display_name=display_name, usertype=usertype)
+
 	elif usertype=='staff':
 		query = 'SELECT first_name FROM airline_staff WHERE username = %s'
 
@@ -238,9 +280,11 @@ def home():
 
 		display_name = cursor.fetchone()['first_name']
 
+		cursor.close()
+		return render_template('home.html', display_name=display_name, usertype=usertype)
 
-	cursor.close()
-	return render_template('home.html', customer_flights=customer_flights, display_name=display_name, usertype=usertype)
+
+	
 
 """
 Search
