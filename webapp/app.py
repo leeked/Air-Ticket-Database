@@ -131,10 +131,10 @@ def registerAuth():
 	# For Staff
 	if regtype == 'staff':
 		#grabs information from the forms
-		username = request.form['username']
+		username = request.form['username'].replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")
 		password = request.form['password']
-		fname = request.form['fname']
-		lname = request.form['lname']
+		fname = request.form['fname'].replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")
+		lname = request.form['lname'].replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")
 		DoB = request.form['DoB']
 
 		#cursor used to send queries
@@ -159,8 +159,8 @@ def registerAuth():
 
 	# For Customer/User
 	#grabs information from the forms
-	username = request.form['email']
-	name = request.form['name']
+	username = request.form['email'].replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")
+	name = request.form['name'].replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")
 	password = request.form['password']
 
 	addr_num = request.form['addr_building_num']
@@ -449,7 +449,7 @@ def leaverating():
 	flight_num=request.form['flight_num']
 	depart_ts=request.form['depart_ts']
 	rating=request.form['rating']
-	review=request.form['review']
+	review=request.form['review'].replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")
 	curr_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 	cursor = conn.cursor()
