@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Dec 01, 2021 at 06:05 PM
+-- Generation Time: Dec 03, 2021 at 11:12 PM
 -- Server version: 10.4.21-MariaDB
 -- PHP Version: 8.0.10
 
@@ -60,7 +60,10 @@ CREATE TABLE `airline_staff` (
 INSERT INTO `airline_staff` (`username`, `staff_password`, `first_name`, `last_name`, `date_of_birth`) VALUES
 ('alexblock', '0a840ef45467fb3932dbf2c2896c5cbf', 'Alex', 'Block', '2021-11-02'),
 ('enderman', '14511f2f5564650d129ca7cabc333278', 'ender', 'man', '2021-11-25'),
-('steve_block', 'dedicatedram', 'Steve', 'Block', '2009-05-16');
+('steve_block', 'dedicatedram', 'Steve', 'Block', '2009-05-16'),
+('test', '098f6bcd4621d373cade4e832627b4f6', 'Testing', 'Dummy', '2021-12-09'),
+('test2', '098f6bcd4621d373cade4e832627b4f6', 'Testing2', 'Dummy', '2021-12-13'),
+('xsstest&amp;', '202cb962ac59075b964b07152d234b70', 'Kevin&amp;', 'Lee&gt;', '2021-12-20');
 
 -- --------------------------------------------------------
 
@@ -222,6 +225,7 @@ INSERT INTO `purchases` (`ticket_id`, `email`, `card_type`, `card_number`, `name
 (1000, 'jj2798@nyu.edu', 'VISA', '1111-1111-1111-1111', 'Jeremy', '2023-09-01', '2021-11-10 23:06:00', 2121.00),
 (1001, 'thisanemail@gmail.com', 'MasterCard', '0112-3581-3213-4558', 'Johnny', '2029-06-09', '2021-11-10 23:06:00', 2121.00),
 (1002, 'thisanemail@gmail.com', 'MasterCard', '0112-3581-3213-4558', 'Johnny', '2029-06-09', '2020-06-12 12:00:00', 200.00),
+(1003, 'dummy@nyu.edu', 'VISA', '1111-1111-1111-1111', 'dummy', '2021-12-30', '2021-12-01 15:27:17', 1850.00),
 (2000, 'dummy@nyu.edu', 'VISA', '1111-1111-1111-1111', 'dummy', '2023-12-26', '2021-12-01 02:04:39', 2500.00),
 (2001, 'dummy@nyu.edu', 'VISA', '1111-1111-1111-1111', 'dummy', '2021-12-22', '2021-12-01 12:03:41', 2500.00),
 (2002, 'thisanemail@gmail.com', 'MasterCard', '0112-3581-3213-4558', 'Johnny', '2029-06-09', '2020-05-08 14:00:00', 1000.00),
@@ -264,6 +268,13 @@ CREATE TABLE `reviews` (
   `comments` varchar(100) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+--
+-- Dumping data for table `reviews`
+--
+
+INSERT INTO `reviews` (`email`, `airline_name`, `flight_number`, `depart_ts`, `rating`, `comments`) VALUES
+('dummy@nyu.edu', 'China Eastern', 1, '2021-11-10 22:41:00', 8, 'it was aight');
+
 -- --------------------------------------------------------
 
 --
@@ -302,11 +313,11 @@ CREATE TABLE `ticket` (
 --
 
 INSERT INTO `ticket` (`ticket_id`, `airline_name`, `flight_number`, `depart_ts`, `price`) VALUES
-(1000, 'China Eastern', 1, '2021-11-10 22:41:00', 1850.00),
-(1001, 'China Eastern', 1, '2021-11-10 22:41:00', 1850.00),
-(1002, 'China Eastern', 1, '2021-11-10 22:41:00', 1850.00),
-(1003, 'China Eastern', 1, '2021-11-10 22:41:00', 1850.00),
-(1004, 'China Eastern', 1, '2021-11-10 22:41:00', 1850.00),
+(1000, 'China Eastern', 1, '2021-11-10 22:41:00', 2312.50),
+(1001, 'China Eastern', 1, '2021-11-10 22:41:00', 2312.50),
+(1002, 'China Eastern', 1, '2021-11-10 22:41:00', 2312.50),
+(1003, 'China Eastern', 1, '2021-11-10 22:41:00', 2312.50),
+(1004, 'China Eastern', 1, '2021-11-10 22:41:00', 2312.50),
 (2000, 'American Airlines', 2, '2021-12-23 22:00:00', 3125.00),
 (2001, 'American Airlines', 2, '2021-12-23 22:00:00', 3125.00),
 (2002, 'American Airlines', 2, '2021-12-23 22:00:00', 3125.00),
@@ -339,7 +350,9 @@ CREATE TABLE `works_for` (
 --
 
 INSERT INTO `works_for` (`username`, `airline_name`) VALUES
-('steve_block', 'China Eastern');
+('test', 'American Airlines'),
+('steve_block', 'China Eastern'),
+('test2', 'China Eastern');
 
 -- --------------------------------------------------------
 
