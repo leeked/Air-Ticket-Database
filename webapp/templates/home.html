@@ -22,7 +22,7 @@
 		<th>Arrival Timestamp</th>
 		<th>Flight Status</th>
 
-	{% for line in flights %}
+	{% for line in customer_flights %}
 		<tr>
 			<td>{{line['airline_name']}}</td>
 			<td>{{line['flight_number']}}</td>
@@ -47,6 +47,20 @@
 
 	<a href='/purchasepage'>
 		<button>Purchase Tickets</button>
+	</a>
+
+	</br>
+	</br>
+
+	<a href='/reviewpage'>
+		<button>Leave a Review</button>
+	</a>
+
+	</br>
+	</br>
+
+	<a href='/viewspend'>
+		<button>View My Spending</button>
 	</a>
 {% endif %}
 

@@ -1,6 +1,6 @@
-from flask import Flask, render_template, request, session, url_for, redirect
+from flask import Flask, render_template, request, session, url_for, redirect, abort
 import pymysql.cursors
-from datetime import datetime
+import datetime
 
 app = Flask(__name__)
 
@@ -50,6 +50,7 @@ def loginAuth():
 	
 	#cursor used to send queries
 	cursor = conn.cursor()
+	# If login as Staff
 	if request.form.get('login_type') == 'on':
 		#executes query
 		query = 'SELECT * FROM airline_staff WHERE username = %s and staff_password = MD5(%s)'
@@ -80,6 +81,7 @@ def loginAuth():
 			error = 'Invalid login or username'
 			return render_template('login.html', error=error)
 
+	# If login as customer
 	else:
 		#executes query
 		query = 'SELECT * FROM customer WHERE email = %s and customer_password = MD5(%s)'
@@ -114,7 +116,29 @@ def register():
 # Register as Staff
 @app.route('/staffreg')
 def staffreg():
-	return render_template('staffreg.html')
+	# Grab existing airlines
+
+	cursor = conn.cursor()
+
+	query = 'SELECT airline_name FROM airline'
+	cursor.execute(query)
+
+	airlines = cursor.fetchall()
+
+	# Patching for wonky space handling by html
+	for val in airlines:
+		val['visual'] = val['airline_name']
+		val['airline_name'] = val['airline_name'].replace(' ', '&nbsp;')
+
+	cursor.close()
+
+	print(airlines)
+
+	if 'error' in session:
+		error = session.pop('error')
+		return render_template('staffreg.html', error=error, airlines=airlines)
+
+	return render_template('staffreg.html', airlines=airlines)
 
 # Register as User
 @app.route('/userreg')
@@ -129,11 +153,14 @@ def registerAuth():
 	# For Staff
 	if regtype == 'staff':
 		#grabs information from the forms
-		username = request.form['username']
+		username = request.form['username'].replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")
 		password = request.form['password']
-		fname = request.form['fname']
-		lname = request.form['lname']
+		fname = request.form['fname'].replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")
+		lname = request.form['lname'].replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")
 		DoB = request.form['DoB']
+		airline_employer = request.form['employer'].replace('&nbsp;', ' ')
+
+		print(airline_employer)
 
 		#cursor used to send queries
 		cursor = conn.cursor()
@@ -142,23 +169,37 @@ def registerAuth():
 		cursor.execute(query, (username))
 		#stores the results in a variable
 		data = cursor.fetchone()
+
 		#use fetchall() if you are expecting more than 1 data row
 		error = None
 		if(data):
 			#If the previous query returns data, then user exists
 			error = "This user already exists"
-			return render_template('staffreg.html', error = error)
+			session['error'] = error
+			return redirect(url_for('staffreg'))
 		else:
 			ins = "INSERT INTO airline_staff VALUES(%s, MD5(%s), %s, %s, %s)"
 			cursor.execute(ins, (username, password, fname, lname, DoB))
 			conn.commit()
+
+			# Insert into works_for new registered employee
+			empl_check = 'SELECT * FROM works_for WHERE username = %s AND airline_name = %s'
+			cursor.execute(empl_check, (username,airline_employer))
+
+			check_res = cursor.fetchone()
+
+			# If not already registered into table, create entry
+			if not check_res:
+				ins_wf = 'INSERT INTO works_for VALUES(%s, %s)'
+				cursor.execute(ins_wf, (username, airline_employer))
+				conn.commit()
 			cursor.close()
 			return render_template('index.html')
 
 	# For Customer/User
 	#grabs information from the forms
-	username = request.form['email']
-	name = request.form['name']
+	username = request.form['email'].replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")
+	name = request.form['name'].replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")
 	password = request.form['password']
 
 	addr_num = request.form['addr_building_num']
@@ -203,23 +244,34 @@ HOME
 def home():
 	username=session['username']
 	usertype=session['type']
+
+	# Cleanup for straggling errors
+	if 'error' in session:
+		session.pop('error')
+
 	cursor = conn.cursor()
 
-	query = "SELECT flights.airline_name, ticket.flight_number, depart_airport_code, arrival_airport_code, flights.depart_ts, arrival_ts, flight_status "\
+	display_name = 0
+
+	# Change display name based on user type
+	if usertype=='customer':
+		# Show all upcoming flights
+		query = "SELECT flights.airline_name, ticket.flight_number, depart_airport_code, arrival_airport_code, flights.depart_ts, arrival_ts, flight_status "\
 		"FROM purchases INNER JOIN ticket USING (ticket_id) INNER JOIN flights USING (flight_number) "\
 		"WHERE purchases.email = %s"
 
-	cursor.execute(query,(username))
+		cursor.execute(query,(username))
 
-	data = cursor.fetchall()
-	display_name = 0
+		customer_flights = cursor.fetchall()
 
-	if usertype=='customer':
 		query = 'SELECT customer_name FROM customer WHERE email = %s'
 
 		cursor.execute(query, (username))
 		
 		display_name = cursor.fetchone()['customer_name']
+
+		cursor.close()
+		return render_template('home.html', customer_flights=customer_flights, display_name=display_name, usertype=usertype)
 
 	elif usertype=='staff':
 		query = 'SELECT first_name FROM airline_staff WHERE username = %s'
@@ -228,13 +280,16 @@ def home():
 
 		display_name = cursor.fetchone()['first_name']
 
+		cursor.close()
+		return render_template('home.html', display_name=display_name, usertype=usertype)
 
-	cursor.close()
-	return render_template('home.html', flights=data, display_name=display_name, usertype=usertype)
+
+	
 
 """
-SEARCH
+Search
 """
+
 # Search Page
 @app.route('/searchpage')
 def searchpage():
@@ -284,8 +339,11 @@ Customer
 # Purchase Page Default
 @app.route('/purchasepage')
 def purchasepage():
+	if session['type'] == 'staff':
+		abort(401)
 	cursor = conn.cursor()
 
+	# Display all available tickets for purchase
 	query = 'SELECT * FROM available_tickets'
 
 	cursor.execute(query)
@@ -302,6 +360,9 @@ def purchasepage():
 
 @app.route('/purchaseSearch', methods=['POST'])
 def purchaseSearch():
+	if session['type'] == 'staff':
+		abort(401)
+	# Allows user to search for tickets based on a user input flight number
 	flight_num = request.form['flight_num']
 	cursor = conn.cursor()
 
@@ -317,6 +378,10 @@ def purchaseSearch():
 
 @app.route('/purchaseTicket', methods=['POST'])
 def purchaseTicket():
+	if session['type'] == 'staff':
+		abort(401)
+	# Allows the user to specify which ticket they would like to purchase.
+	# If that ticket is unavailable, the page will display an error saying so
 	ticket_id = request.form['ticket_id']
 	cursor = conn.cursor()
 
@@ -339,23 +404,30 @@ def purchaseTicket():
 
 @app.route('/purchaseForm', methods=['POST'])
 def purchaseForm():
+	if session['type'] == 'staff':
+		abort(401)
+	# Finalizes purchase of ticket
 	email = request.form['email']
 	card_type = request.form['card_type']
 	card_number = request.form['card_number']
 	name_on_card = request.form['name_on_card']
 	exp_date = request.form['exp_date']
-	purchase_ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+	purchase_ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 	ticket_id = 0
 	purchase_price = 0
 
+	# Grab ticket_id from session 'cookie'
 	if 'ticket_id' in session:
 		ticket_id = session.pop('ticket_id')
 	else:
 		error = 'Session lost Ticket ID!'
-		return render_template('purchasepage.html', error=error)
+		session['error'] = error
+		return redirect(url_for('purchasepage'))
 
 	cursor = conn.cursor()
 
+	# A checkpoint that serves both as a last minute availability check
+	# and a query for the sales price of the ticket
 	query = 'SELECT price FROM available_tickets WHERE ticket_id = %s'
 
 	cursor.execute(query, (ticket_id))
@@ -367,7 +439,8 @@ def purchaseForm():
 	else:
 		error = 'This ticket is no longer available!'
 		cursor.close()
-		return render_template('purchasepage.html', error=error)
+		session['error'] = error
+		return redirect(url_for('purchasepage'))
 
 	ins = 'INSERT INTO purchases VALUES(%s, %s, %s, %s, %s, %s, %s, %s)'
 
@@ -378,12 +451,179 @@ def purchaseForm():
 	return render_template('purchasesuccess.html')
 
 
+# Rating
+@app.route('/reviewpage')
+def reviewpage():
+	if session['type'] == 'staff':
+		abort(401)
+	# Displays all flights the user is able to rate and review
+	username=session['username']
+	curr_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+	cursor = conn.cursor()
+
+	get_prev_flights = 'SELECT flights.airline_name, flights.flight_number, flights.depart_ts, flights.arrival_ts, sell_price '\
+	    'FROM flights INNER JOIN ticket USING (flight_number) INNER JOIN purchases USING (ticket_id) '\
+		'WHERE email = %s AND arrival_ts < %s'
+	
+	cursor.execute(get_prev_flights, (username,curr_date))
+
+	res = cursor.fetchall()
+	
+	# Displays all ratings and reviews the user has made in the past
+	get_prev_reviews = 'SELECT airline_name, flight_number, depart_ts, rating, comments FROM reviews WHERE email = %s'
+
+	cursor.execute(get_prev_reviews, (username))
+
+	reviews = cursor.fetchall()
+
+	cursor.close()
+
+	if 'error' in session:
+		error = session.pop('error')
+		return render_template('reviewpage.html', res=res, reviews=reviews, error=error)
+
+	return render_template('reviewpage.html', res=res, reviews=reviews)
+
+@app.route('/leaverating', methods=['POST'])
+def leaverating():
+	if session['type'] == 'staff':
+		abort(401)
+	username=session['username']
+	airline_name=request.form['airline_name']
+	flight_num=request.form['flight_num']
+	depart_ts=request.form['depart_ts']
+	rating=request.form['rating']
+	review=request.form['review'].replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")
+	curr_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+	cursor = conn.cursor()
+
+	# Get real depart_ts
+	get_ts = 'SELECT depart_ts FROM flights WHERE airline_name = %s AND flight_number = %s AND DATE(depart_ts) = %s'
+
+	cursor.execute(get_ts, (airline_name, flight_num, depart_ts))
+
+	ts = cursor.fetchone()
+
+	depart_ts = ts['depart_ts']
+
+	# Check if flight is applicable to user review
+	check = 'SELECT * FROM flights INNER JOIN ticket USING (flight_number) INNER JOIN purchases USING (ticket_id) '\
+		'WHERE email = %s AND arrival_ts < %s AND flights.airline_name = %s AND flights.flight_number = %s AND flights.depart_ts = %s'
+
+	cursor.execute(check, (username, curr_date, airline_name, flight_num, depart_ts))
+
+	res = cursor.fetchone()
+
+	if not res:
+		error = 'Invalid Flight'
+		
+		cursor.close()
+		session['error'] = error
+		return redirect(url_for('reviewpage'))
+
+	# Check if the user already reviewed this flight
+	check2 = 'SELECT * FROM reviews '\
+		'WHERE email = %s AND airline_name = %s AND flight_number = %s AND depart_ts = %s'
+
+	cursor.execute(check2, (username, airline_name, flight_num, depart_ts))
+
+	res2 = cursor.fetchone()
+
+	if res2:
+		error = 'You have already reviewed this flight!'
+		
+		cursor.close()
+		session['error'] = error
+		return redirect(url_for('reviewpage'))
+
+	# Finalize rating and insert into table
+	ins = 'INSERT INTO reviews VALUES(%s, %s, %s, %s, %s, %s)'
+
+	cursor.execute(ins, (username, airline_name, flight_num, depart_ts, rating, review))
+	conn.commit()
+	cursor.close()
+
+	return redirect(url_for('reviewpage'))
+
+# View Spending
+@app.route('/viewspend', methods=['POST', 'GET'])
+def viewspend():
+	if session['type'] == 'staff':
+		abort(401)
+	username=session['username']
+
+	cursor = conn.cursor()
+
+	query = 'SELECT SUM(sell_price) as Total FROM purchases WHERE email = %s AND DATE(purchase_ts) > %s AND DATE(purchase_ts) < %s'
+	spend_list = []
+
+	# If user specified range
+	if request.form.get('searched') == 'on':
+		lim = datetime.datetime.strptime(request.form['start'], "%Y-%m-%d")
+		curr_bound = datetime.datetime.strptime(request.form['end'], "%Y-%m-%d")
+		next_bound = curr_bound - datetime.timedelta(days = 31)
+
+		while(next_bound > lim):
+			cursor.execute(query, (username, next_bound.strftime("%Y-%m-%d"), curr_bound.strftime("%Y-%m-%d")))
+
+			res = cursor.fetchone()
+
+			res['date_range'] = next_bound.strftime("%Y-%m-%d") + ' to ' + curr_bound.strftime("%Y-%m-%d")
+
+			spend_list.append(res)
+
+			curr_bound = next_bound
+			next_bound = next_bound - datetime.timedelta(days = 31)
+
+		# Left over days
+		cursor.execute(query, (username, lim.strftime("%Y-%m-%d"), curr_bound.strftime("%Y-%m-%d")))
+
+		res = cursor.fetchone()
+
+		res['date_range'] = lim.strftime("%Y-%m-%d") + ' to ' + curr_bound.strftime("%Y-%m-%d")
+
+		spend_list.append(res)
+
+	# Otherwise
+	else:
+		months = 6
+		curr_bound = datetime.datetime.now()
+		next_bound = curr_bound - datetime.timedelta(days = 31)
+
+		for i in range(months):
+			cursor.execute(query, (username, next_bound.strftime("%Y-%m-%d"), curr_bound.strftime("%Y-%m-%d")))
+
+			res = cursor.fetchone()
+
+			res['date_range'] = next_bound.strftime("%Y-%m-%d") + ' to ' + curr_bound.strftime("%Y-%m-%d")
+
+			spend_list.append(res)
+
+			curr_bound = next_bound
+			next_bound = next_bound - datetime.timedelta(days = 31)
+
+	# Determine how much was spent in the past year
+	curr_bound = datetime.datetime.now()
+	next_bound = curr_bound - datetime.timedelta(days = 365)
+
+	cursor.execute(query, (username, next_bound.strftime("%Y-%m-%d"), curr_bound.strftime("%Y-%m-%d")))
+
+	year_spent = cursor.fetchone()['Total']
+
+	cursor.close()
+
+	return render_template('viewspend.html', spend_list=spend_list, year_spent=year_spent)
+
 """
 Staff
 """
 
 @app.route('/staffview', methods=['GET', 'POST'])
 def staffview():
+	if session['type'] == 'customer':
+		abort(401)
 	#debugging to see whats in session object
 	print(f"session = {session}")
 	#get username for welcome, employer to only show company information
@@ -401,6 +641,8 @@ def staffview():
 
 @app.route('/flightreg')
 def flightreg():
+	if session['type'] == 'customer':
+		abort(401)
 	airline = session["employer"]
 	cursor=conn.cursor()
 	#get all flights in database to display
@@ -412,6 +654,8 @@ def flightreg():
 
 @app.route('/airplanereg', methods=['GET', 'POST'])
 def airplanereg():
+	if session['type'] == 'customer':
+		abort(401)
 	airline = session["employer"]
 	cursor = conn.cursor()
 	#query to display all currently owned airplanes for company
@@ -425,6 +669,8 @@ def airplanereg():
 
 @app.route('/airportreg')
 def airportreg():
+	if session['type'] == 'customer':
+		abort(401)
 	cursor = conn.cursor()
 	#query to display all Airports in system
 	get_airports = "SELECT * FROM Airport"
@@ -438,6 +684,8 @@ def airportreg():
 
 @app.route('/staffaddplane', methods=['GET', 'POST'])
 def staffaddplane():
+	if session['type'] == 'customer':
+		abort(401)
 	#fetch data from form
 	airline = session["employer"]
 	airplane_id = request.form['airplane_id']
@@ -474,6 +722,8 @@ def staffaddplane():
 
 @app.route('/staffaddairport', methods=['GET', 'POST'])
 def staffaddairport():
+	if session['type'] == 'customer':
+		abort(401)
 	#fetch data from form
 	airport_name = request.form['airport_name']
 	airport_code = request.form['airport_code']
@@ -509,6 +759,8 @@ def staffaddairport():
 
 @app.route('/staffaddflight', methods=['GET', 'POST'])
 def staffaddflight():
+	if session['type'] == 'customer':
+		abort(401)
 	airline = session["employer"]
 	#get variables from form
 	flight_number = request.form['flight_number']
