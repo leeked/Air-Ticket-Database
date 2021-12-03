@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, session, url_for, redirect
 import pymysql.cursors
-from datetime import datetime
+import datetime
 
 app = Flask(__name__)
 
@@ -50,6 +50,7 @@ def loginAuth():
 	
 	#cursor used to send queries
 	cursor = conn.cursor()
+	# If login as Staff
 	if request.form.get('login_type') == 'on':
 		#executes query
 		query = 'SELECT * FROM airline_staff WHERE username = %s and staff_password = MD5(%s)'
@@ -80,6 +81,7 @@ def loginAuth():
 			error = 'Invalid login or username'
 			return render_template('login.html', error=error)
 
+	# If login as customer
 	else:
 		#executes query
 		query = 'SELECT * FROM customer WHERE email = %s and customer_password = MD5(%s)'
@@ -356,7 +358,7 @@ def purchaseForm():
 	card_number = request.form['card_number']
 	name_on_card = request.form['name_on_card']
 	exp_date = request.form['exp_date']
-	purchase_ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+	purchase_ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 	ticket_id = 0
 	purchase_price = 0
 
@@ -400,7 +402,7 @@ def purchaseForm():
 def reviewpage():
 	# Displays all flights the user is able to rate and review
 	username=session['username']
-	curr_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+	curr_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 	cursor = conn.cursor()
 
@@ -435,7 +437,7 @@ def leaverating():
 	depart_ts=request.form['depart_ts']
 	rating=request.form['rating']
 	review=request.form['review']
-	curr_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+	curr_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 	cursor = conn.cursor()
 
@@ -486,6 +488,73 @@ def leaverating():
 	cursor.close()
 
 	return redirect(url_for('reviewpage'))
+
+# View Spending
+@app.route('/viewspend', methods=['POST', 'GET'])
+def viewspend():
+	username=session['username']
+
+	cursor = conn.cursor()
+
+	query = 'SELECT SUM(sell_price) as Total FROM purchases WHERE email = %s AND DATE(purchase_ts) > %s AND DATE(purchase_ts) < %s'
+	spend_list = []
+
+	# If user specified range
+	if request.form.get('searched') == 'on':
+		lim = datetime.datetime.strptime(request.form['start'], "%Y-%m-%d")
+		curr_bound = datetime.datetime.strptime(request.form['end'], "%Y-%m-%d")
+		next_bound = curr_bound - datetime.timedelta(days = 31)
+
+		while(next_bound > lim):
+			cursor.execute(query, (username, next_bound.strftime("%Y-%m-%d"), curr_bound.strftime("%Y-%m-%d")))
+
+			res = cursor.fetchone()
+
+			res['date_range'] = next_bound.strftime("%Y-%m-%d") + ' to ' + curr_bound.strftime("%Y-%m-%d")
+
+			spend_list.append(res)
+
+			curr_bound = next_bound
+			next_bound = next_bound - datetime.timedelta(days = 31)
+
+		# Left over days
+		cursor.execute(query, (username, lim.strftime("%Y-%m-%d"), curr_bound.strftime("%Y-%m-%d")))
+
+		res = cursor.fetchone()
+
+		res['date_range'] = lim.strftime("%Y-%m-%d") + ' to ' + curr_bound.strftime("%Y-%m-%d")
+
+		spend_list.append(res)
+
+	# Otherwise
+	else:
+		months = 6
+		curr_bound = datetime.datetime.now()
+		next_bound = curr_bound - datetime.timedelta(days = 31)
+
+		for i in range(months):
+			cursor.execute(query, (username, next_bound.strftime("%Y-%m-%d"), curr_bound.strftime("%Y-%m-%d")))
+
+			res = cursor.fetchone()
+
+			res['date_range'] = next_bound.strftime("%Y-%m-%d") + ' to ' + curr_bound.strftime("%Y-%m-%d")
+
+			spend_list.append(res)
+
+			curr_bound = next_bound
+			next_bound = next_bound - datetime.timedelta(days = 31)
+
+	# Determine how much was spent in the past year
+	curr_bound = datetime.datetime.now()
+	next_bound = curr_bound - datetime.timedelta(days = 365)
+
+	cursor.execute(query, (username, next_bound.strftime("%Y-%m-%d"), curr_bound.strftime("%Y-%m-%d")))
+
+	year_spent = cursor.fetchone()['Total']
+
+	cursor.close()
+
+	return render_template('viewspend.html', spend_list=spend_list, year_spent=year_spent)
 
 """
 Staff

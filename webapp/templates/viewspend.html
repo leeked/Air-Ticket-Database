@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block head %}
+<h1>View My Spending</h1>
+{% endblock %}
+
+
+{% block body %}
+<p class='message'>Total Spent in past year: {{year_spent}}</p>
+
+<p class = "message">Select the date range you would like to see:</p>
+<form action="/viewspend" method="POST">
+	<label for='start'>From:</label></br>
+	<input type="date" name="start" required/></br></br>
+	<label for='end'>Until:</label></br>
+	<input type="date" name="end" required/></br></br>
+
+	<input type='hidden' name='searched' value='on'/>
+	<input type="submit" value = View />
+	{% if error %}
+		<p class="error"><strong>Error:</strong> {{error}}</p>
+	{% endif %}
+</form>
+
+</br>
+
+<style type="text/css">
+	table, th, td{
+		border: 1px solid black;
+	}
+</style>
+
+<table>
+	<th>Month</th>
+	<th>Total</th>
+
+{% for elem in spend_list %}
+	<tr>
+		<td>{{elem['date_range']}}</td>
+		<td>{{elem['Total']}}</td>
+	</tr>
+{% endfor %}
+</table>
+
+</br>
+</br>
+<a href="/">Go back</a>
+
+{% endblock %}
