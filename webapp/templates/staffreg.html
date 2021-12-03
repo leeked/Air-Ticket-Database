@@ -9,8 +9,17 @@
 <form action="/registerAuth" method="POST">
 	<input type="text" name = "username" placeholder="username" required/> </br>
 	<input type="password" name = "password" placeholder="password" required/></br></br>
+
 	<input type="text" name = "fname" placeholder="First Name"/> </br></br>
 	<input type="text" name = "lname" placeholder="Last Name"/> </br></br>
+	
+	<label for'employer'>Choose employer</label></br>
+	<select name='employer' id='employer'>
+		{% for elem in airlines %}
+		<option value={{elem['airline_name']}}>{{elem['visual']}}</option>
+		{% endfor %}
+	</select></br></br>
+	
 	<label for='DoB'>Date of Birth</label></br>
 	<input type="date" name = "DoB" placeholder="Date of Birth"/> </br></br>
 	<input type='hidden' name = 'type' value = 'staff'/>
