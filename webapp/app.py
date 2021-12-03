@@ -210,20 +210,21 @@ def home():
 	if 'error' in session:
 		session.pop('error')
 
-	# Show all upcoming flights
 	cursor = conn.cursor()
 
-	query = "SELECT flights.airline_name, ticket.flight_number, depart_airport_code, arrival_airport_code, flights.depart_ts, arrival_ts, flight_status "\
-		"FROM purchases INNER JOIN ticket USING (ticket_id) INNER JOIN flights USING (flight_number) "\
-		"WHERE purchases.email = %s"
-
-	cursor.execute(query,(username))
-
-	data = cursor.fetchall()
 	display_name = 0
 
 	# Change display name based on user type
 	if usertype=='customer':
+		# Show all upcoming flights
+		query = "SELECT flights.airline_name, ticket.flight_number, depart_airport_code, arrival_airport_code, flights.depart_ts, arrival_ts, flight_status "\
+		"FROM purchases INNER JOIN ticket USING (ticket_id) INNER JOIN flights USING (flight_number) "\
+		"WHERE purchases.email = %s"
+
+		cursor.execute(query,(username))
+
+		customer_flights = cursor.fetchall()
+
 		query = 'SELECT customer_name FROM customer WHERE email = %s'
 
 		cursor.execute(query, (username))
@@ -239,7 +240,7 @@ def home():
 
 
 	cursor.close()
-	return render_template('home.html', flights=data, display_name=display_name, usertype=usertype)
+	return render_template('home.html', customer_flights=customer_flights, display_name=display_name, usertype=usertype)
 
 """
 Search

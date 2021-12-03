@@ -22,7 +22,7 @@
 		<th>Arrival Timestamp</th>
 		<th>Flight Status</th>
 
-	{% for line in flights %}
+	{% for line in customer_flights %}
 		<tr>
 			<td>{{line['airline_name']}}</td>
 			<td>{{line['flight_number']}}</td>
