@@ -242,21 +242,17 @@ def home():
 	return render_template('home.html', flights=data, display_name=display_name, usertype=usertype)
 
 """
-Customer
+Search
 """
 
 # Search Page
 @app.route('/searchpage')
 def searchpage():
-	if session['type'] == 'staff':
-		abort(401)
 	return render_template('search.html')
 
 # Search
 @app.route('/search', methods=['POST', 'GET'])
 def search():
-	if session['type'] == 'staff':
-		abort(401)
 	# Grab information from form
 	src = request.form['src']
 	dest = request.form['dest']
@@ -290,6 +286,10 @@ def search():
 	else:
 		error = "No results!"
 		return render_template('search.html', error=error)
+
+"""
+Customer
+"""
 
 # Purchase Page Default
 @app.route('/purchasepage')
