@@ -643,7 +643,14 @@ def staffview():
 def flightreg():
 	if session['type'] == 'customer':
 		abort(401)
-	return render_template('flightreg.html')
+	airline = session["employer"]
+	cursor=conn.cursor()
+	#get all flights in database to display
+	all_flights = "SELECT * FROM Flights WHERE airline_name = %s"
+	cursor.execute(all_flights, (airline))
+	flight_history = cursor.fetchall()
+	cursor.close()
+	return render_template('flightreg.html', company=airline, flights=flight_history)
 
 @app.route('/airplanereg', methods=['GET', 'POST'])
 def airplanereg():
@@ -789,9 +796,103 @@ def staffaddflight():
 	all_flights = "SELECT * FROM Flights WHERE airline_name = %s"
 	cursor.execute(all_flights, (airline))
 	flight_history = cursor.fetchall()
+	cursor.close()
 
 	return render_template('flightreg.html', flights=flight_history, company=airline)
 	
+def somequeries():
+	'''
+	based on the airline you work for, perform the following queries:
+
+	template below:
+	'''
+	
+	'''
+	SELECT 
+	FROM
+	WHERE
+	'''
+	#get all flights in the upcoming 30 days
+	'''
+	time_now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+	time_in_30days = time_now + datetme.timedelta(days=30)
+
+	SELECT *
+	FROM Flights
+	WHERE airline_name = %s AND depart_ts BETWEEN %s[time_now] AND %s[time_in_30days]
+	'''
+	
+	#get all flights based on range of dates (start and end)
+	'''
+	SELECT *
+	FROM Flights
+	WHERE airline_name = %s AND depart_ts BETWEEN %s[start_date] AND %s[end_date]
+	'''
+
+	#get all flights based on source airport
+	'''
+	SELECT F.airline_name, F.flight_number, F.depart_ts, F.airplane_id, F.arrival_ts, F.depart_airport_code, F.arrival_airport_code, F.flight_status, F.base_price,
+	FROM Flights AS F, Airport AS A
+	WHERE F.airline_name = %s AND  F.depart_airport_code = A.code AND A.airport_name = %s
+	'''
+
+	#get all flights based on source city
+	'''
+	SELECT F.airline_name, F.flight_number, F.depart_ts, F.airplane_id, F.arrival_ts, F.depart_airport_code, F.arrival_airport_code, F.flight_status, F.base_price,
+	FROM Flights AS F, Airport AS A
+	WHERE F.airline_name = %s AND  F.depart_airport_code = A.code AND A.city = %s
+	'''
+
+	#get all flights based on destination airport
+	'''
+	SELECT F.airline_name, F.flight_number, F.depart_ts, F.airplane_id, F.arrival_ts, F.depart_airport_code, F.arrival_airport_code, F.flight_status, F.base_price,
+	FROM Flights AS F, Airport AS A
+	WHERE F.airline_name = %s AND  F.arrival_airport_code = A.code AND A.airport_name = %s
+	'''
+
+	#get all flights based on destination city
+	'''
+	SELECT F.airline_name, F.flight_number, F.depart_ts, F.airplane_id, F.arrival_ts, F.depart_airport_code, F.arrival_airport_code, F.flight_status, F.base_price,
+	FROM Flights AS F, Airport AS A
+	WHERE F.airline_name = %s AND  F.arrival_airport_code = A.code AND A.city = %s
+	'''
+
+	#see all customers of a particular flight
+	'''
+	SELECT C.email AS email, C.customer_name AS name
+	FROM Ticket AS T, Purchases AS P, Flights AS F, Customer AS C
+	WHERE F.airline_name = %s AND F.flight_number = %s AND F.flight_number = T.flight_number AND T.ticket_id = P.ticket_id AND C.email = P.email
+	'''
+
+	#view each flight's average ratings
+	'''
+	SELECT flight_number, depart_ts, AVG(rating)
+	FROM Reviews
+	WHERE airline_name = %s
+	GROUP BY flight_number, depart_ts
+	ORDER BY AVG(rating) DESC
+	'''
+
+	#view comments and ratings of the flight given by the customer
+	'''
+	SELECT rating, comments
+	FROM Reviews
+	WHERE airline_name = %s AND flight_number = %s 
+	'''
+
+	#view the most frequent customer within the past year to the air line you work for
+
+	#show all the flights a particular customer has taken with that airline
+
+	#show total number of tickets sold based on a range of dates/past year/last month/etc
+
+	#show monthwise ticket sales in a barchart/table
+
+	#show the total amount of revenue earned from ticket sales in the last month and last year
+
+	#find the 3 most popular destination in the past 3 months and past year (based on tickets sold)
+
+	return 0
 """
 LOGOUT
 """
