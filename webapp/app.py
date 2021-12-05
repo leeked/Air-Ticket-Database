@@ -874,6 +874,56 @@ def staffmodifyflight():
 	cursor.close()
 	return render_template('modifyflight.html', flights=flight_to_modify)
 
+@app.route('/flightdetails', methods=['GET', 'POST'])
+def flightdetails():
+	#making sure only staff can access this page
+	if session['type'] == 'customer':
+		abort(401)
+	airline = session["employer"]
+
+	#initialize cursor
+	cursor = conn.cursor()
+	get_avg_flightrating = "SELECT AVG(rating) AS 'average' FROM `reviews` WHERE airline_name = %s"
+	cursor.execute(get_avg_flightrating, (airline))
+	overall_average = cursor.fetchone()['average']
+
+
+
+	return render_template('flightviewdetails.html', airline=airline, avgrating = overall_average)
+
+@app.route('/getflightdetails', methods=['GET', 'POST'])
+def flightratings():
+
+	#making sure only staff can access this page
+	if session['type'] == 'customer':
+		abort(401)
+	airline = session["employer"]
+
+	flight_number = request.form['flight_number']
+
+	#initialize cursor
+	cursor = conn.cursor()
+	get_avg_flightrating = "SELECT AVG(rating) AS 'average' FROM `reviews` WHERE airline_name = %s"
+	cursor.execute(get_avg_flightrating, (airline))
+	overall_average = cursor.fetchone()['average']
+
+	get_avgforflight = "SELECT AVG(rating) AS 'average' FROM `reviews` WHERE airline_name = %s AND flight_number = %s"
+	cursor.execute(get_avgforflight, (airline, flight_number))
+	avg_forflight = cursor.fetchone()
+
+	if(not avg_forflight):
+		error = f"Flight number {flight_number} not found."
+		return render_template('flightviewdetails.html', airline=airline, avgrating = overall_average, error=error)
+
+	get_customers = "SELECT C.email AS email, C.customer_name AS name, C.phone_number AS phone_number FROM Ticket AS T, Purchases AS P, Flights AS F, Customer AS C WHERE F.airline_name = %s AND F.flight_number = %s AND F.flight_number = T.flight_number AND T.ticket_id = P.ticket_id AND C.email = P.email"
+	cursor.execute(get_customers, (airline, flight_number))
+	customers = cursor.fetchall()
+	
+	get_feedback = "SELECT email, rating, comments FROM reviews WHERE airline_name = %s AND flight_number = %s"
+	cursor.execute(get_feedback, (airline, flight_number))
+	comments = cursor.fetchall()
+
+	return render_template('flightviewdetails.html', airline=airline, avgrating = overall_average, flight_number = flight_number, avgforflight=avg_forflight['average'], customers = customers, reviews=comments)
 
 def somequeries():
 	'''
@@ -896,7 +946,9 @@ def somequeries():
 	FROM Flights
 	WHERE airline_name = %s AND depart_ts BETWEEN %s[time_now] AND %s[time_in_30days]
 	'''
+	# SELECT * FROM `flights` WHERE depart_ts BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 30 DAY);
 	
+
 	#get all flights based on range of dates (start and end)
 	'''
 	SELECT *

@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+
+{% block head %}
+
+{% endblock %}
+
+
+{% block body %}
+<p class="message">Search for a flight:</p>
+<style type="text/css">
+	table, th, td{
+		border: 1px solid black;
+	}
+</style>
+<form action="/getflightdetails" method="POST">
+    <input type="text" name = "flight_number" placeholder="Search by Flight Number" required/> </br>
+	<input type="submit" value = Search>
+</form>
+
+<p class="message">{{airline}}'s average rating: {{avgrating}}</p>
+<style type="text/css">
+	table, th, td{
+		border: 1px solid black;
+	}
+</style>
+
+<p class="message">Average rating per for flight #{{flight_number}}: {{avgforflight}}</p>
+<style type="text/css">
+	table, th, td{
+		border: 1px solid black;
+	}
+</style>
+{% if error %}
+    <p class="error"><strong>Error:</strong> {{error}}</p>
+{% endif %}
+
+<p class="message">Here are the customers of this flight:</p>
+<style type="text/css">
+	table, th, td{
+		border: 1px solid black;
+	}
+</style>
+
+<table>
+	<th>Email</th>
+	<th>Name</th>
+	<th>Phone Number</th>
+    <!-- <th>Date of Birth</th>
+	<th>Passport Country</th> -->
+
+{% for line in customers %}
+	<tr>
+		<td>{{line['email']}}</td>
+		<td>{{line['name']}}</td>
+        <td>{{line['phone_number']}}</td>
+        <!-- <td>{{line['date_of_birth']}}</td>
+        <td>{{line['passport_country']}}</td> -->
+	</tr>
+{% endfor %}
+</table>
+
+<p class="message">Here are the reviews regarding this flight:</p>
+<style type="text/css">
+	table, th, td{
+		border: 1px solid black;
+	}
+</style>
+
+<table>
+    <th>email</th>
+	<th>rating</th>
+	<th>comments</th>
+
+{% for line in reviews %}
+	<tr>
+        <td>{{line['email']}}</td>
+		<td>{{line['rating']}}</td>
+		<td>{{line['comments']}}</td>
+	</tr>
+{% endfor %}
+</table>
+
+</br></br>
+
+<a href="/staffview">Go back</a>
+{% endblock %}
