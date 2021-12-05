@@ -506,6 +506,14 @@ def leaverating():
 
 	ts = cursor.fetchone()
 
+	if not ts:
+		error = 'Invalid Flight'
+
+		cursor.close()
+		session['error'] = error
+		return redirect(url_for('reviewpage'))
+
+
 	depart_ts = ts['depart_ts']
 
 	# Check if flight is applicable to user review
