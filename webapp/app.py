@@ -759,6 +759,7 @@ def staffaddairport():
 
 @app.route('/staffaddflight', methods=['GET', 'POST'])
 def staffaddflight():
+	#making sure only staff can access this page
 	if session['type'] == 'customer':
 		abort(401)
 	airline = session["employer"]
@@ -772,8 +773,28 @@ def staffaddflight():
 	flight_status = request.form['flight_status']
 	base_price = request.form['base_price']
 
+	
+
 	#initialize cursor to begin queries
 	cursor = conn.cursor()
+
+	all_flights = "SELECT * FROM Flights WHERE airline_name = %s"
+	cursor.execute(all_flights, (airline))
+	flight_history = cursor.fetchall()
+	
+	#check if arrival time comes before departure time
+	if(datetime.datetime.fromisoformat(arr_ts) < datetime.datetime.fromisoformat(dep_ts)):
+		error = "Arrival date comes before departure date"
+		return render_template('flightreg.html', flights=flight_history, error=error, company=airline)
+
+	#check if airplane belongs to airline
+	check_plane = "SELECT * FROM airplane WHERE airline_name = %s AND airplane_id = %s"
+	cursor.execute(check_plane, (airline, airplane_id))
+	plane_owned = cursor.fetchall()
+
+	if (not plane_owned):
+		error = f"{airline} does not own plane with plane ID {airplane_id}"
+		return render_template('flightreg.html', flights=flight_history, error=error, company=airline)
 
 	#query to see if flight already exists, we know airline_name, flight_number, and depart_ts
 	# make up the primary key of Flights
@@ -786,13 +807,14 @@ def staffaddflight():
 	if(data):
 		#if data is not empty, then the flight must already exist
 		error = f"Flight {flight_number} for {airline} already exists"
-		return render_template('flightreg.html', error=error)
+		return render_template('flightreg.html', flights=flight_history, error=error, company=airline)
 	
 	#otherwise, this flight does not exist and we can add it to our database
 	new_flight = "INSERT INTO Flights VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s)"
 	cursor.execute(new_flight, (airline, flight_number, dep_ts, airplane_id, arr_ts, dep_airport_code, arr_airport_code, flight_status, base_price))
 	conn.commit()
 
+	#get updated query with new flight
 	all_flights = "SELECT * FROM Flights WHERE airline_name = %s"
 	cursor.execute(all_flights, (airline))
 	flight_history = cursor.fetchall()
@@ -800,6 +822,59 @@ def staffaddflight():
 
 	return render_template('flightreg.html', flights=flight_history, company=airline)
 	
+@app.route('/manageflight', methods = ['GET', 'POST'])
+def manageflight():
+	#making sure only staff can access this page
+	if session['type'] == 'customer':
+		abort(401)
+	airline = session["employer"]
+
+	cursor = conn.cursor()
+	check_flight = "SELECT * FROM Flights WHERE airline_name = %s"
+	cursor.execute(check_flight, (airline))
+	flights = cursor.fetchall()
+	#retrieve and display query results of all company flights for initial display
+	cursor.close()
+	return render_template('modifyflight.html', flights=flights)
+
+@app.route('/staffmodifyflight', methods = ['GET', 'POST'])
+def staffmodifyflight():
+	#making sure only staff can access this page
+	if session['type'] == 'customer':
+		abort(401)
+	airline = session["employer"]
+
+	# print(f"{request.form}")
+	flight_number = request.form['flight_number']
+	status = request.form['status']
+	# print(f"changed status to {status}")
+	# print(f"flight number {flight_number}")
+	
+	cursor = conn.cursor()
+
+	check_flight = "SELECT * FROM Flights WHERE airline_name = %s AND flight_number = %s"
+	cursor.execute(check_flight, (airline, flight_number))
+	flight_to_modify = cursor.fetchone()
+
+	#check if empty query
+	if (not flight_to_modify):
+		error = "Flight not found"
+		return render_template('modifyflight.html', error = error)
+
+	#update the flight data and commit it to database server
+	update_status = "UPDATE flights SET flight_status = %s WHERE flight_number = %s"
+	cursor.execute(update_status, (status, flight_number))
+	conn.commit()
+
+	#query to display updated flight	
+	check_flight = "SELECT * FROM Flights WHERE airline_name = %s"
+	cursor.execute(check_flight, (airline))
+	flight_to_modify = cursor.fetchall()
+
+	cursor.close()
+	return render_template('modifyflight.html', flights=flight_to_modify)
+
+
 def somequeries():
 	'''
 	based on the airline you work for, perform the following queries:
@@ -815,7 +890,7 @@ def somequeries():
 	#get all flights in the upcoming 30 days
 	'''
 	time_now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-	time_in_30days = time_now + datetme.timedelta(days=30)
+	time_in_30days = time_now + datetime.timedelta(days=30)
 
 	SELECT *
 	FROM Flights
@@ -831,10 +906,11 @@ def somequeries():
 
 	#get all flights based on source airport
 	'''
-	SELECT F.airline_name, F.flight_number, F.depart_ts, F.airplane_id, F.arrival_ts, F.depart_airport_code, F.arrival_airport_code, F.flight_status, F.base_price,
+	SELECT F.airline_name, F.flight_number, F.depart_ts, F.airplane_id, F.arrival_ts, F.depart_airport_code, F.arrival_airport_code, F.flight_status, F.base_price
 	FROM Flights AS F, Airport AS A
 	WHERE F.airline_name = %s AND  F.depart_airport_code = A.code AND A.airport_name = %s
 	'''
+	# SELECT F.airline_name, F.flight_number, F.depart_ts, F.airplane_id, F.arrival_ts, F.depart_airport_code, F.arrival_airport_code, F.flight_status, F.base_price FROM Flights AS F, Airport AS A WHERE F.airline_name = "American Airlines" AND F.depart_airport_code = A.code AND A.airport_name = "TOK";
 
 	#get all flights based on source city
 	'''
@@ -842,10 +918,12 @@ def somequeries():
 	FROM Flights AS F, Airport AS A
 	WHERE F.airline_name = %s AND  F.depart_airport_code = A.code AND A.city = %s
 	'''
+	# SELECT F.airline_name, F.flight_number, F.depart_ts, F.airplane_id, F.arrival_ts, F.depart_airport_code, F.arrival_airport_code, F.flight_status, F.base_price FROM flights AS F, airport AS A WHERE F.airline_name = "American Airlines" AND F.arrival_airport_code = A.code AND A.city = "Paris";
+
 
 	#get all flights based on destination airport
 	'''
-	SELECT F.airline_name, F.flight_number, F.depart_ts, F.airplane_id, F.arrival_ts, F.depart_airport_code, F.arrival_airport_code, F.flight_status, F.base_price,
+	SELECT F.airline_name, F.flight_number, F.depart_ts, F.airplane_id, F.arrival_ts, F.depart_airport_code, F.arrival_airport_code, F.flight_status, F.base_price
 	FROM Flights AS F, Airport AS A
 	WHERE F.airline_name = %s AND  F.arrival_airport_code = A.code AND A.airport_name = %s
 	'''
