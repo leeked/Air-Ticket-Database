@@ -16,15 +16,13 @@
 <table>
 	<th>Email</th>
 	<th>Name</th>
-	<th>Phone Number</th>
     <th>Frequency</th>
 
 
 {% for line in frequentflyers %}
 	<tr>
 		<td>{{line['email']}}</td>
-		<td>{{line['name']}}</td>
-        <td>{{line['phone_number']}}</td>
+		<td>{{line['name_on_card']}}</td>
         <td>{{line['frequency']}}</td>
 	</tr>
 {% endfor %}

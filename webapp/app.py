@@ -640,7 +640,7 @@ def staffview():
 	cursor = conn.cursor()
 
 	#query all flights under that Airline (in the upcoming 30 days)
-	all_flights = "SELECT F.airline_name, F.flight_number, F.depart_ts, F.airplane_id, F.arrival_ts, A.city as arrival, D.city as destination, F.flight_status, F.base_price FROM flights as F, airport as A, airport as D WHERE F.arrival_airport_code = A.code and F.depart_airport_code = D.code AND airline_name = %s AND depart_ts BETWEEN NOW() and DATE_ADD(NOW(), INTERVAL 30 DAY) ORDER BY depart_ts"
+	all_flights = "SELECT F.airline_name, F.flight_number, F.depart_ts, F.airplane_id, F.arrival_ts, A.city as arrival, D.city as depart, F.flight_status, F.base_price FROM flights as F, airport as A, airport as D WHERE F.arrival_airport_code = A.code and F.depart_airport_code = D.code AND airline_name = %s AND depart_ts BETWEEN NOW() and DATE_ADD(NOW(), INTERVAL 30 DAY) ORDER BY depart_ts"
 	#comment below one for original
 	# all_flights = "SELECT * FROM Flights WHERE airline_name = %s"
 	cursor.execute(all_flights, (airline))
@@ -656,7 +656,8 @@ def flightreg():
 	airline = session["employer"]
 	cursor=conn.cursor()
 	#get all flights in database to display
-	all_flights = "SELECT * FROM Flights WHERE airline_name = %s"
+	# all_flights = "SELECT * FROM Flights WHERE airline_name = %s"
+	all_flights = "SELECT F.airline_name, F.flight_number, F.depart_ts, F.airplane_id, F.arrival_ts, A.city AS arrival, D.city AS depart, F.flight_status, F.base_price FROM flights as F, airport as A, airport as D WHERE F.arrival_airport_code = A.code and F.depart_airport_code = D.code AND airline_name = %s ORDER BY depart_ts"
 	cursor.execute(all_flights, (airline))
 	flight_history = cursor.fetchall()
 	cursor.close()
@@ -925,7 +926,7 @@ def flightratings():
 		error = f"Flight number {flight_number} not found."
 		return render_template('flightviewdetails.html', airline=airline, avgrating = overall_average, error=error)
 
-	check_flight = "SELECT F.airline_name, F.flight_number, F.depart_ts, F.airplane_id, F.arrival_ts, A.city as arrival, D.city as destination, F.flight_status, F.base_price FROM flights as F, airport as A, airport as D WHERE F.arrival_airport_code = A.code and F.depart_airport_code = D.code AND airline_name = %s AND flight_number = %s"
+	check_flight = "SELECT F.airline_name, F.flight_number, F.depart_ts, F.airplane_id, F.arrival_ts, A.city as arrival, D.city as depart, F.flight_status, F.base_price FROM flights as F, airport as A, airport as D WHERE F.arrival_airport_code = A.code and F.depart_airport_code = D.code AND airline_name = %s AND flight_number = %s"
 	cursor.execute(check_flight, (airline, flight_number))
 	flights = cursor.fetchall()
 
@@ -954,7 +955,7 @@ def financialanalytics():
 	cursor = conn.cursor()
 
 	#view frequent customers
-	get_top_customers = "SELECT C.email, C.customer_name, C.phone_number, COUNT(P.ticket_id) AS frequency FROM customer AS C, purchases AS P, ticket AS T WHERE C.email = P.email AND T.ticket_id = P.ticket_id AND T.airline_name = %s AND depart_ts BETWEEN DATE_SUB(NOW(), INTERVAL 1 YEAR) AND NOW() GROUP BY C.email ORDER BY COUNT(P.ticket_id) DESC"
+	get_top_customers = "SELECT P.email, P.name_on_card, COUNT(P.email) as frequency FROM purchases as P, ticket as T WHERE P.ticket_id = T.ticket_id and T.airline_name = %s GROUP BY P.email ORDER BY frequency DESC"
 	cursor.execute(get_top_customers, (airline))
 	top_customers = cursor.fetchall()
 
@@ -963,13 +964,13 @@ def financialanalytics():
 	#view revenue by month/year
 
 	#view top 3 destinations
-	#this month
-	get_top_destinations_month = "SELECT A.city as destination_city, COUNT(A.city) as frequency FROM flights as F, airport as A, ticket AS T, purchases as P WHERE A.code = F.arrival_airport_code AND F.airline_name = %s and T.ticket_id = P.ticket_id and T.flight_number = F.flight_number AND MONTH(F.depart_ts) = MONTH(NOW()) AND YEAR(F.depart_ts) = YEAR(NOW()) GROUP BY A.city ORDER BY frequency DESC LIMIT 3"
+	#past 3 months
+	get_top_destinations_month = "SELECT B.city as destination_city, COUNT(B.city) as frequency FROM flights as F, airport as A, airport as B, ticket AS T, purchases as P WHERE B.code = F.arrival_airport_code AND A.code = F.depart_airport_code AND F.airline_name = %s and T.ticket_id = P.ticket_id and T.flight_number = F.flight_number AND F.depart_ts BETWEEN DATE_SUB(NOW(), INTERVAL 3 MONTH) AND NOW() GROUP BY B.city ORDER BY frequency DESC LIMIT 3"
 	cursor.execute(get_top_destinations_month, (airline))
 	top_destinations_month = cursor.fetchall()
 
-	#this year
-	get_top_destinations_year = "SELECT A.city as destination_city, COUNT(A.city) as frequency FROM flights as F, airport as A, ticket AS T, purchases as P WHERE A.code = F.arrival_airport_code AND F.airline_name = %s and T.ticket_id = P.ticket_id and T.flight_number = F.flight_number AND YEAR(F.depart_ts) = YEAR(NOW()) GROUP BY A.city ORDER BY frequency DESC LIMIT 3"
+	#past year
+	get_top_destinations_year = "SELECT B.city as destination_city, COUNT(B.city) as frequency FROM flights as F, airport as A, airport as B, ticket AS T, purchases as P WHERE B.code = F.arrival_airport_code AND A.code = F.depart_airport_code AND F.airline_name = %s and T.ticket_id = P.ticket_id and T.flight_number = F.flight_number AND YEAR(F.depart_ts) = YEAR(NOW()) GROUP BY B.city ORDER BY frequency DESC LIMIT 3"
 	cursor.execute(get_top_destinations_year, (airline))
 	top_destinations_year = cursor.fetchall()
 
