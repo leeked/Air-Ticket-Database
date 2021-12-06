@@ -37,6 +37,51 @@
 	</tr>
 {% endfor %}
 </table>
+
+<p class="message">Search for a flight:</p>
+<style type="text/css">
+	table, th, td{
+		border: 1px solid black;
+	}
+</style>
+
+<form action="/staffsearchflight" method="POST">
+    <input type="radio" id = "daterange" name = "search"> <label> Begin <input type="date" name = "depart_ts_start"/></label>  <label>End <input type="date" name = "depart_ts_end"/> </label></br>
+	<input type="radio" id = "flight_number" name = "search"> <input type="text" name = "flight_number" placeholder="Flight Number"/> </br>
+	<input type="radio" id = "airport" name = "search"> <input type="text" name = "depart_airport" placeholder="Departing Airport"/> <input type="text" name = "arrival_airport" placeholder="Destination Airport"/> </br>
+	<input type="radio" id = "city" name = "search"> <input type="text" name = "depart_city" placeholder="Departing City"/> <input type="text" name = "arrival_city" placeholder="Destination City"/> </br>
+	<input type="submit" value = Search>
+    {% if error %}
+		<p class="error"><strong>Error:</strong> {{error}}</p>
+	{% endif %}
+</form>
+
+<table>
+	<th>Airline</th>
+	<th>Flight Number</th>
+	<th>Depart Timestamp</th>
+    <th>Airplane ID</th>
+	<th>Arrival Timestamp</th>
+    <th>Departure Airport</th>
+	<th>Destination Airport</th>
+	<th>Flight Status</th>
+    <th>Base Price</th>
+
+{% for line in flights_in_range %}
+	<tr>
+		<td>{{line['airline_name']}}</td>
+		<td>{{line['flight_number']}}</td>
+        <td>{{line['depart_ts']}}</td>
+        <td>{{line['airplane_id']}}</td>
+        <td>{{line['arrival_ts']}}</td>
+		<td>{{line['depart']}}</td>
+		<td>{{line['arrival']}}</td>
+		<td>{{line['flight_status']}}</td>
+        <td>{{line['base_price']}}</td>
+	</tr>
+{% endfor %}
+</table>
+
 <a href="/airportreg">Register an Airport</a>
 <a href="/airplanereg">View all Airplanes/Add an Airplane</a>
 <a href="/flightreg">Add a Flight</a>

@@ -649,6 +649,93 @@ def staffview():
 	cursor.close()
 	return render_template('flightmanager.html', flights=data, username=username)
 
+@app.route('/staffsearchflight', methods=['GET', 'POST'])
+def staffsearchflight():
+	if session['type'] == 'customer':
+		abort(401)
+	#debugging to see whats in session object
+	print(f"session = {session}")
+	#get username for welcome, employer to only show company information
+	username=session['username']
+	airline = session["employer"]
+	cursor = conn.cursor()
+
+	#query all flights under that Airline (in the upcoming 30 days)
+	all_flights = "SELECT F.airline_name, F.flight_number, F.depart_ts, F.airplane_id, F.arrival_ts, A.city as arrival, D.city as depart, F.flight_status, F.base_price FROM flights as F, airport as A, airport as D WHERE F.arrival_airport_code = A.code and F.depart_airport_code = D.code AND airline_name = %s AND depart_ts BETWEEN NOW() and DATE_ADD(NOW(), INTERVAL 30 DAY) ORDER BY depart_ts"
+	#comment below one for original
+	# all_flights = "SELECT * FROM Flights WHERE airline_name = %s"
+	cursor.execute(all_flights, (airline))
+
+	data = cursor.fetchall()
+
+	#get flights within range of dates from form
+	print(f"{request.form}")
+	depart_ts_start = request.form['depart_ts_start']
+	depart_ts_end = request.form['depart_ts_end']
+	flight_number = request.form['flight_number']
+	depart_airport = request.form['depart_airport']
+	arrival_airport = request.form['arrival_airport']
+	depart_city = request.form['depart_city']
+	arrival_city = request.form['arrival_city']
+
+	#original between two depart_ts
+	# search_flights = "SELECT F.airline_name, F.flight_number, F.depart_ts, F.airplane_id, F.arrival_ts, A.city as arrival, D.city as depart, F.flight_status, F.base_price FROM flights as F, airport as A, airport as D WHERE F.arrival_airport_code = A.code and F.depart_airport_code = D.code AND airline_name = %s AND depart_ts BETWEEN %s and %s ORDER BY depart_ts"
+	resulting_str = ""
+
+	#check cases for form to determine type of query
+	if(depart_ts_start != ''): #if depart_ts_start is not '', then we selected the range of dates radio button
+		depart_ts_start = datetime.datetime.strptime(depart_ts_start, "%Y-%m-%d")
+		#we have a start date for our range, now check if we have an end date
+		if(depart_ts_end != ''): 
+			depart_ts_end = datetime.datetime.strptime(depart_ts_end, "%Y-%m-%d")
+			#if we do, we can check for flight between this query
+			resulting_str = f"AND F.depart_ts BETWEEN CONVERT(datetime, '{depart_ts_start}') AND BETWEEN CONVERT(datetime,'{depart_ts_end}')"
+		else:
+			#if we don't have an end date, we search for flights that depart on or after the start date
+			resulting_str = f"AND F.depart_ts >= '{depart_ts_start}'"
+	elif(depart_ts_end != ''): 
+		depart_ts_end = datetime.datetime.strptime(depart_ts_end, "%Y-%m-%d")
+		#if depart_ts_start is blank but we have a depart_ts_end, we search for flights that depart/departed on/before the given date
+		resulting_str = f"AND F.depart_ts <= '{depart_ts_end}'"
+	elif(flight_number != ''):
+		#if we have a flight number, we can just search for the flight number
+		resulting_str = f"AND F.flight_number = {flight_number}"
+	elif(depart_airport != ''):
+		#if we have a depart airport
+		if(arrival_airport != ''):
+			#if we also have an arrival airport, we can check for a flight that takes us from city A to city B
+			resulting_str = f"AND D.airport_name = '{depart_airport}' AND A.airport_name = '{arrival_airport}'"
+		else:
+			#just check for departing from airport A
+			resulting_str = f"AND D.airport_name = '{depart_airport}'"
+	elif(arrival_airport != ''):
+			#if we just have an arrival airport, we check for flights that takes us to city B
+			resulting_str = f"AND A.airport_name = '{arrival_airport}'"
+	#apply the same concepts from airport to city
+	elif(depart_city != ''):
+		#if we have a depart airport
+		if(arrival_city != ''):
+			#if we also have an arrival airport, we can check for a flight that takes us from city A to city B
+			resulting_str = f"AND D.city = '{depart_city}' AND A.city = '{arrival_city}'"
+		else:
+			#just check for departing from airport A
+			resulting_str = f"AND D.city = '{depart_city}'"
+	elif(arrival_city != ''):
+			#if we just have an arrival airport, we check for flights that takes us to city B
+			resulting_str = f"AND A.city = '{arrival_city}'"
+
+
+	#query all flights under that Airline (between the dates)
+	search_flights = f"SELECT F.airline_name, F.flight_number, F.depart_ts, F.airplane_id, F.arrival_ts, A.city as arrival, D.city as depart, F.flight_status, F.base_price FROM flights as F, airport as A, airport as D WHERE F.arrival_airport_code = A.code and F.depart_airport_code = D.code AND airline_name = %s {resulting_str} ORDER BY depart_ts"
+	# cursor.execute(search_flights, (airline, depart_ts_start, depart_ts_end))
+	print(f"QUERY + {search_flights}")
+	cursor.execute(search_flights, (airline))
+
+	flight_range_dt = cursor.fetchall()
+
+	cursor.close()
+	return render_template('flightmanager.html', flights=data, username=username, flights_in_range=flight_range_dt)
+
 @app.route('/flightreg')
 def flightreg():
 	if session['type'] == 'customer':
@@ -841,7 +928,7 @@ def manageflight():
 	airline = session["employer"]
 
 	cursor = conn.cursor()
-	check_flight = "SELECT * FROM Flights WHERE airline_name = %s"
+	check_flight = "SELECT F.airline_name, F.flight_number, F.depart_ts, F.airplane_id, F.arrival_ts, A.city as arrival, D.city as depart, F.flight_status, F.base_price FROM flights as F, airport as A, airport as D WHERE F.arrival_airport_code = A.code and F.depart_airport_code = D.code AND airline_name = %s"
 	cursor.execute(check_flight, (airline))
 	flights = cursor.fetchall()
 	#retrieve and display query results of all company flights for initial display
@@ -863,7 +950,7 @@ def staffmodifyflight():
 	
 	cursor = conn.cursor()
 
-	check_flight = "SELECT F.airline_name, F.flight_number, F.depart_ts, F.airplane_id, F.arrival_ts, A.city AS arrival, D.city AS destination, F.flight_status, F.base_price FROM flights as F, airport as A, airport as D WHERE F.arrival_airport_code = A.code and F.depart_airport_code = D.code AND airline_name = %s AND flight_number = %s"
+	check_flight = "SELECT F.airline_name, F.flight_number, F.depart_ts, F.airplane_id, F.arrival_ts, A.city as arrival, D.city as depart, F.flight_status, F.base_price FROM flights as F, airport as A, airport as D WHERE F.arrival_airport_code = A.code and F.depart_airport_code = D.code AND airline_name = %s AND flight_number = %s"
 	cursor.execute(check_flight, (airline, flight_number))
 	flight_to_modify = cursor.fetchone()
 
@@ -959,9 +1046,20 @@ def financialanalytics():
 	cursor.execute(get_top_customers, (airline))
 	top_customers = cursor.fetchall()
 
+	#view reports
+
 	#view tickets sold by range
 
 	#view revenue by month/year
+	#past month
+	get_month_revenue = "SELECT SUM(P.sell_price) as Revenue FROM purchases as P, ticket as T WHERE P.ticket_id = T.ticket_id and T.airline_name = %s AND YEAR(P.purchase_ts) = YEAR(NOW()) AND MONTH(P.purchase_ts) = MONTH(NOW())"
+	cursor.execute(get_month_revenue, (airline))
+	month_revenue = cursor.fetchone()
+
+	#past year
+	get_year_revenue = "SELECT SUM(P.sell_price) as Revenue FROM purchases as P, ticket as T WHERE P.ticket_id = T.ticket_id and T.airline_name = %s AND YEAR(P.purchase_ts) = YEAR(NOW())"
+	cursor.execute(get_year_revenue, (airline))
+	year_revenue = cursor.fetchone()
 
 	#view top 3 destinations
 	#past 3 months
@@ -976,7 +1074,7 @@ def financialanalytics():
 
 	cursor.close()
 
-	return render_template("staffanalytics.html", frequentflyers = top_customers, popular_places_month=top_destinations_month, popular_places_year=top_destinations_year)
+	return render_template("staffanalytics.html", frequentflyers = top_customers, popular_places_month=top_destinations_month, popular_places_year=top_destinations_year, month_revenue=month_revenue['Revenue'], year_revenue=year_revenue['Revenue'])
 
 @app.route('/getanalytics', methods = ['GET', 'POST'])
 def getanalytics():
@@ -1093,7 +1191,13 @@ def somequeries():
 
 
 	#show total number of tickets sold based on a range of dates/past year/last month/etc
-
+	''' something similar to:
+	SELECT YEAR(P.purchase_ts) as Year, MONTH(P.purchase_ts) as Month, SUM(P.sell_price) as Revenue
+	FROM purchases as P, ticket as T
+	WHERE P.ticket_id = T.ticket_id and T.airline_name = "American Airlines"
+	GROUP BY Year, Month
+	ORDER BY Revenue;
+	'''
 	#show monthwise ticket sales in a barchart/table
 
 	#show the total amount of revenue earned from ticket sales in the last month and last year

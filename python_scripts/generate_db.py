@@ -60,11 +60,15 @@ ticket_start = 1
 
 #generate sql insert statments for airplanes
 def insert_planes():
+    plane_data = {}
     #insert statement using dictionary defined above
     for key in airlines_airplanes.keys():
         for value in airlines_airplanes[key]:
-            insert = f"INSERT INTO airplane VALUES('{key}', '{value}', 100);"
+            num_seats = random.randint(10, 120)
+            insert = f"INSERT INTO airplane VALUES('{key}', '{value}', {num_seats});"
             print(insert)
+            plane_data[value] = num_seats
+    return plane_data
 
 
 #This function will return a random datetime between two datetime objects.
@@ -243,8 +247,8 @@ aa_airline_planes = airlines_airplanes[aa_airline]
 ce_airline = "China Eastern"
 ce_airline_planes = airlines_airplanes[ce_airline]
 insert_planes()
-data = generate_flights(20, aa_airline, aa_airline_planes)
-ce_data = generate_flights(20, ce_airline, ce_airline_planes)
+data = generate_flights(10, aa_airline, aa_airline_planes)
+ce_data = generate_flights(10, ce_airline, ce_airline_planes)
 # # print(data)
 tix, price = generate_tickets(data)
 ce_tix, ce_price = generate_tickets(ce_data)
