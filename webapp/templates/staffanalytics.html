@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block head %}
+
+{% endblock %}
+
+
+{% block body %}
+<p class="message">Frequent Customers:</p>
+<style type="text/css">
+	table, th, td{
+		border: 1px solid black;
+	}
+</style>
+
+<table>
+	<th>Email</th>
+	<th>Name</th>
+	<th>Phone Number</th>
+    <th>Frequency</th>
+
+
+{% for line in frequentflyers %}
+	<tr>
+		<td>{{line['email']}}</td>
+		<td>{{line['name']}}</td>
+        <td>{{line['phone_number']}}</td>
+        <td>{{line['frequency']}}</td>
+	</tr>
+{% endfor %}
+</table>
+
+
+<p class="message">Most Popular Destinations this month:</p>
+<style type="text/css">
+	table, th, td{
+		border: 1px solid black;
+	}
+</style>
+
+<table>
+	<th>Destination</th>
+    <th>Frequency</th>
+
+
+{% for line in popular_places_month %}
+	<tr>
+		<td>{{line['destination_city']}}</td>
+        <td>{{line['frequency']}}</td>
+	</tr>
+{% endfor %}
+</table>
+
+<p class="message">Most Popular Destinations this year:</p>
+<style type="text/css">
+	table, th, td{
+		border: 1px solid black;
+	}
+</style>
+
+<table>
+	<th>Destination</th>
+    <th>Frequency</th>
+
+
+{% for line in popular_places_year %}
+	<tr>
+		<td>{{line['destination_city']}}</td>
+        <td>{{line['frequency']}}</td>
+	</tr>
+{% endfor %}
+</table>
+
+</br></br>
+
+<a href="/staffview">Go back</a>
+{% endblock %}

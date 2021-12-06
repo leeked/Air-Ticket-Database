@@ -24,12 +24,39 @@
 	}
 </style>
 
-<p class="message">Average rating per for flight #{{flight_number}}: {{avgforflight}}</p>
+<p class="message">Average rating for flight #{{flight_number}}: {{avgforflight}}</p>
 <style type="text/css">
 	table, th, td{
 		border: 1px solid black;
 	}
 </style>
+
+<table>
+	<th>Airline</th>
+	<th>Flight Number</th>
+	<th>Depart Timestamp</th>
+    <th>Airplane ID</th>
+	<th>Arrival Timestamp</th>
+    <th>Departure Airport</th>
+	<th>Destination Airport</th>
+	<th>Flight Status</th>
+    <th>Base Price</th>
+
+{% for line in flights %}
+	<tr>
+		<td>{{line['airline_name']}}</td>
+		<td>{{line['flight_number']}}</td>
+        <td>{{line['depart_ts']}}</td>
+        <td>{{line['airplane_id']}}</td>
+        <td>{{line['arrival_ts']}}</td>
+		<td>{{line['arrival']}}</td>
+		<td>{{line['destination']}}</td>
+		<td>{{line['flight_status']}}</td>
+        <td>{{line['base_price']}}</td>
+	</tr>
+{% endfor %}
+</table>
+
 {% if error %}
     <p class="error"><strong>Error:</strong> {{error}}</p>
 {% endif %}
@@ -45,6 +72,7 @@
 	<th>Email</th>
 	<th>Name</th>
 	<th>Phone Number</th>
+    <th>Tickets Purchased</th>
     <!-- <th>Date of Birth</th>
 	<th>Passport Country</th> -->
 
@@ -53,6 +81,7 @@
 		<td>{{line['email']}}</td>
 		<td>{{line['name']}}</td>
         <td>{{line['phone_number']}}</td>
+        <td>{{line['tickets_purchased']}}</td>
         <!-- <td>{{line['date_of_birth']}}</td>
         <td>{{line['passport_country']}}</td> -->
 	</tr>

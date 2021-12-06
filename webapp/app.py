@@ -631,8 +631,10 @@ def staffview():
 	airline = session["employer"]
 	cursor = conn.cursor()
 
-	#query all flights under that Airline
-	all_flights = "SELECT * FROM Flights WHERE airline_name = %s"
+	#query all flights under that Airline (in the upcoming 30 days)
+	all_flights = "SELECT F.airline_name, F.flight_number, F.depart_ts, F.airplane_id, F.arrival_ts, A.city as arrival, D.city as destination, F.flight_status, F.base_price FROM flights as F, airport as A, airport as D WHERE F.arrival_airport_code = A.code and F.depart_airport_code = D.code AND airline_name = %s AND depart_ts BETWEEN NOW() and DATE_ADD(NOW(), INTERVAL 30 DAY) ORDER BY depart_ts"
+	#comment below one for original
+	# all_flights = "SELECT * FROM Flights WHERE airline_name = %s"
 	cursor.execute(all_flights, (airline))
 
 	data = cursor.fetchall()
@@ -852,7 +854,7 @@ def staffmodifyflight():
 	
 	cursor = conn.cursor()
 
-	check_flight = "SELECT * FROM Flights WHERE airline_name = %s AND flight_number = %s"
+	check_flight = "SELECT F.airline_name, F.flight_number, F.depart_ts, F.airplane_id, F.arrival_ts, A.city AS arrival, D.city AS destination, F.flight_status, F.base_price FROM flights as F, airport as A, airport as D WHERE F.arrival_airport_code = A.code and F.depart_airport_code = D.code AND airline_name = %s AND flight_number = %s"
 	cursor.execute(check_flight, (airline, flight_number))
 	flight_to_modify = cursor.fetchone()
 
@@ -887,7 +889,7 @@ def flightdetails():
 	cursor.execute(get_avg_flightrating, (airline))
 	overall_average = cursor.fetchone()['average']
 
-
+	cursor.close()
 
 	return render_template('flightviewdetails.html', airline=airline, avgrating = overall_average)
 
@@ -915,15 +917,70 @@ def flightratings():
 		error = f"Flight number {flight_number} not found."
 		return render_template('flightviewdetails.html', airline=airline, avgrating = overall_average, error=error)
 
-	get_customers = "SELECT C.email AS email, C.customer_name AS name, C.phone_number AS phone_number FROM Ticket AS T, Purchases AS P, Flights AS F, Customer AS C WHERE F.airline_name = %s AND F.flight_number = %s AND F.flight_number = T.flight_number AND T.ticket_id = P.ticket_id AND C.email = P.email"
+	check_flight = "SELECT F.airline_name, F.flight_number, F.depart_ts, F.airplane_id, F.arrival_ts, A.city as arrival, D.city as destination, F.flight_status, F.base_price FROM flights as F, airport as A, airport as D WHERE F.arrival_airport_code = A.code and F.depart_airport_code = D.code AND airline_name = %s AND flight_number = %s"
+	cursor.execute(check_flight, (airline, flight_number))
+	flights = cursor.fetchall()
+
+	if(not flights):
+		error = f"Flight number {flight_number} not found."
+		return render_template('flightviewdetails.html', airline=airline, avgrating = overall_average, error=error)
+	
+	get_customers = "SELECT DISTINCT C.email AS email, C.customer_name AS name, C.phone_number AS phone_number, COUNT(C.email) AS tickets_purchased FROM Ticket AS T, Purchases AS P, Flights AS F, Customer AS C WHERE F.airline_name = %s AND F.flight_number = %s AND F.flight_number = T.flight_number AND T.ticket_id = P.ticket_id AND C.email = P.email GROUP BY(C.email)"
 	cursor.execute(get_customers, (airline, flight_number))
 	customers = cursor.fetchall()
 	
 	get_feedback = "SELECT email, rating, comments FROM reviews WHERE airline_name = %s AND flight_number = %s"
 	cursor.execute(get_feedback, (airline, flight_number))
 	comments = cursor.fetchall()
+	cursor.close()
+	return render_template('flightviewdetails.html', airline=airline, flights=flights, avgrating = overall_average, flight_number = flight_number, avgforflight=avg_forflight['average'], customers = customers, reviews=comments)
 
-	return render_template('flightviewdetails.html', airline=airline, avgrating = overall_average, flight_number = flight_number, avgforflight=avg_forflight['average'], customers = customers, reviews=comments)
+@app.route('/financialanalytics', methods = ['GET', 'POST'])
+def financialanalytics():
+	#making sure only staff can access this page
+	if session['type'] == 'customer':
+		abort(401)
+	airline = session["employer"]
+
+	#session cursor
+	cursor = conn.cursor()
+
+	#view frequent customers
+	get_top_customers = "SELECT C.email, C.customer_name, C.phone_number, COUNT(P.ticket_id) AS frequency FROM customer AS C, purchases AS P, ticket AS T WHERE C.email = P.email AND T.ticket_id = P.ticket_id AND T.airline_name = %s AND depart_ts BETWEEN DATE_SUB(NOW(), INTERVAL 1 YEAR) AND NOW() GROUP BY C.email ORDER BY COUNT(P.ticket_id) DESC"
+	cursor.execute(get_top_customers, (airline))
+	top_customers = cursor.fetchall()
+
+	#view tickets sold by range
+
+	#view revenue by month/year
+
+	#view top 3 destinations
+	#this month
+	get_top_destinations_month = "SELECT A.city as destination_city, COUNT(A.city) as frequency FROM flights as F, airport as A, ticket AS T, purchases as P WHERE A.code = F.arrival_airport_code AND F.airline_name = %s and T.ticket_id = P.ticket_id and T.flight_number = F.flight_number AND MONTH(F.depart_ts) = MONTH(NOW()) AND YEAR(F.depart_ts) = YEAR(NOW()) GROUP BY A.city ORDER BY frequency DESC LIMIT 3"
+	cursor.execute(get_top_destinations_month, (airline))
+	top_destinations_month = cursor.fetchall()
+
+	#this year
+	get_top_destinations_year = "SELECT A.city as destination_city, COUNT(A.city) as frequency FROM flights as F, airport as A, ticket AS T, purchases as P WHERE A.code = F.arrival_airport_code AND F.airline_name = %s and T.ticket_id = P.ticket_id and T.flight_number = F.flight_number AND YEAR(F.depart_ts) = YEAR(NOW()) GROUP BY A.city ORDER BY frequency DESC LIMIT 3"
+	cursor.execute(get_top_destinations_year, (airline))
+	top_destinations_year = cursor.fetchall()
+
+	cursor.close()
+
+	return render_template("staffanalytics.html", frequentflyers = top_customers, popular_places_month=top_destinations_month, popular_places_year=top_destinations_year)
+
+@app.route('/getanalytics', methods = ['GET', 'POST'])
+def getanalytics():
+	#making sure only staff can access this page
+	if session['type'] == 'customer':
+		abort(401)
+	airline = session["employer"]
+
+	#search for a customer
+
+
+
+	return render_template("staffanalytics.html")
 
 def somequeries():
 	'''
@@ -938,6 +995,7 @@ def somequeries():
 	WHERE
 	'''
 	#get all flights in the upcoming 30 days
+	#
 	'''
 	time_now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 	time_in_30days = time_now + datetime.timedelta(days=30)
@@ -1011,8 +1069,19 @@ def somequeries():
 	'''
 
 	#view the most frequent customer within the past year to the air line you work for
+	'''
+	SELECT C.email, C.customer_name, C.phone_number, COUNT(P.ticket_id) AS frequency 
+	FROM customer AS C, purchases AS P, ticket AS T 
+	WHERE C.email = P.email AND T.ticket_id = P.ticket_id AND T.airline_name = "American Airlines" AND depart_ts BETWEEN DATE_SUB(NOW(), INTERVAL 1 YEAR) AND NOW() 
+	GROUP BY C.email 
+	ORDER BY COUNT(P.ticket_id) DESC;
+	'''
 
 	#show all the flights a particular customer has taken with that airline
+	'''
+	SELECT T.flight_number, T.ticket_id FROM customer AS C, purchases AS P, ticket AS T WHERE C.email = P.email AND T.ticket_id = P.ticket_id AND T.airline_name = "American Airlines" AND C.email = "dummy@nyu.edu";
+	'''
+
 
 	#show total number of tickets sold based on a range of dates/past year/last month/etc
 
