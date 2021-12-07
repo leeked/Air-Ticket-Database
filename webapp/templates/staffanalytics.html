@@ -83,6 +83,26 @@
 	}
 </style>
 
+<p class="message">Monthly Report</p>
+<style type="text/css">
+	table, th, td{
+		border: 1px solid black;
+	}
+</style>
+
+<table>
+	<th>Month/Year</th>
+    <th>Number of Tickets Sold</th>
+
+
+{% for line in summary %}
+	<tr>
+		<td>{{line['Month']}}/{{line['Year']}}</td>
+        <td>{{line['total_purchases']}}</td>
+	</tr>
+{% endfor %}
+</table>
+
 </br></br>
 
 <a href="/staffview">Go back</a>

@@ -689,7 +689,7 @@ def staffsearchflight():
 		if(depart_ts_end != ''): 
 			depart_ts_end = datetime.datetime.strptime(depart_ts_end, "%Y-%m-%d")
 			#if we do, we can check for flight between this query
-			resulting_str = f"AND F.depart_ts BETWEEN CONVERT(datetime, '{depart_ts_start}') AND BETWEEN CONVERT(datetime,'{depart_ts_end}')"
+			resulting_str = f"AND F.depart_ts BETWEEN '{depart_ts_start}' AND '{depart_ts_end}'"
 		else:
 			#if we don't have an end date, we search for flights that depart on or after the start date
 			resulting_str = f"AND F.depart_ts >= '{depart_ts_start}'"
@@ -727,8 +727,7 @@ def staffsearchflight():
 
 	#query all flights under that Airline (between the dates)
 	search_flights = f"SELECT F.airline_name, F.flight_number, F.depart_ts, F.airplane_id, F.arrival_ts, A.city as arrival, D.city as depart, F.flight_status, F.base_price FROM flights as F, airport as A, airport as D WHERE F.arrival_airport_code = A.code and F.depart_airport_code = D.code AND airline_name = %s {resulting_str} ORDER BY depart_ts"
-	# cursor.execute(search_flights, (airline, depart_ts_start, depart_ts_end))
-	print(f"QUERY + {search_flights}")
+	# print(f"QUERY = {search_flights}")
 	cursor.execute(search_flights, (airline))
 
 	flight_range_dt = cursor.fetchall()
@@ -871,7 +870,7 @@ def staffaddflight():
 	flight_status = request.form['flight_status']
 	base_price = request.form['base_price']
 
-	
+
 
 	#initialize cursor to begin queries
 	cursor = conn.cursor()
@@ -931,9 +930,19 @@ def manageflight():
 	check_flight = "SELECT F.airline_name, F.flight_number, F.depart_ts, F.airplane_id, F.arrival_ts, A.city as arrival, D.city as depart, F.flight_status, F.base_price FROM flights as F, airport as A, airport as D WHERE F.arrival_airport_code = A.code and F.depart_airport_code = D.code AND airline_name = %s"
 	cursor.execute(check_flight, (airline))
 	flights = cursor.fetchall()
+
+	#count number of delayed flights
+	count_delayed = "SELECT COUNT(flight_status) AS num_delayed FROM flights WHERE airline_name = %s AND flight_status= 'Delayed'"
+	cursor.execute(count_delayed, (airline))
+	num_delayed = cursor.fetchone()['num_delayed']
+
+	count_ontime = "SELECT COUNT(flight_status) AS num_ontime FROM flights WHERE airline_name = %s AND flight_status= 'On-time'"
+	cursor.execute(count_ontime, (airline))
+	num_ontime = cursor.fetchone()['num_ontime']
+
 	#retrieve and display query results of all company flights for initial display
 	cursor.close()
-	return render_template('modifyflight.html', flights=flights)
+	return render_template('modifyflight.html', flights=flights, num_delayed=num_delayed, num_ontime=num_ontime)
 
 @app.route('/staffmodifyflight', methods = ['GET', 'POST'])
 def staffmodifyflight():
@@ -1047,6 +1056,9 @@ def financialanalytics():
 	top_customers = cursor.fetchall()
 
 	#view reports
+	get_summary = "SELECT YEAR(P.purchase_ts) as Year, MONTH(P.purchase_ts) as Month, COUNT(T.flight_number) as total_purchases FROM purchases as P, ticket as T WHERE P.ticket_id = T.ticket_id and T.airline_name = %s GROUP BY Year, Month ORDER BY Year, Month"
+	cursor.execute(get_summary, (airline))
+	summary = cursor.fetchall()
 
 	#view tickets sold by range
 
@@ -1074,7 +1086,7 @@ def financialanalytics():
 
 	cursor.close()
 
-	return render_template("staffanalytics.html", frequentflyers = top_customers, popular_places_month=top_destinations_month, popular_places_year=top_destinations_year, month_revenue=month_revenue['Revenue'], year_revenue=year_revenue['Revenue'])
+	return render_template("staffanalytics.html", frequentflyers = top_customers, popular_places_month=top_destinations_month, popular_places_year=top_destinations_year, month_revenue=month_revenue['Revenue'], year_revenue=year_revenue['Revenue'], summary=summary)
 
 @app.route('/getanalytics', methods = ['GET', 'POST'])
 def getanalytics():
@@ -1083,11 +1095,46 @@ def getanalytics():
 		abort(401)
 	airline = session["employer"]
 
-	#search for a customer
+	#session cursor
+	cursor = conn.cursor()
 
+	#view frequent customers
+	get_top_customers = "SELECT P.email, P.name_on_card, COUNT(P.email) as frequency FROM purchases as P, ticket as T WHERE P.ticket_id = T.ticket_id and T.airline_name = %s GROUP BY P.email ORDER BY frequency DESC"
+	cursor.execute(get_top_customers, (airline))
+	top_customers = cursor.fetchall()
 
+	#view reports
+	get_summary = "SELECT YEAR(P.purchase_ts) as Year, MONTH(P.purchase_ts) as Month, COUNT(T.flight_number) as total_purchases FROM purchases as P, ticket as T WHERE P.ticket_id = T.ticket_id and T.airline_name = %s GROUP BY Year, Month ORDER BY Year, Month"
+	cursor.execute(get_summary, (airline))
+	summary = cursor.fetchall()
 
-	return render_template("staffanalytics.html")
+	#view tickets sold by range
+
+	#view revenue by month/year
+	#past month
+	get_month_revenue = "SELECT SUM(P.sell_price) as Revenue FROM purchases as P, ticket as T WHERE P.ticket_id = T.ticket_id and T.airline_name = %s AND YEAR(P.purchase_ts) = YEAR(NOW()) AND MONTH(P.purchase_ts) = MONTH(NOW())"
+	cursor.execute(get_month_revenue, (airline))
+	month_revenue = cursor.fetchone()
+
+	#past year
+	get_year_revenue = "SELECT SUM(P.sell_price) as Revenue FROM purchases as P, ticket as T WHERE P.ticket_id = T.ticket_id and T.airline_name = %s AND YEAR(P.purchase_ts) = YEAR(NOW())"
+	cursor.execute(get_year_revenue, (airline))
+	year_revenue = cursor.fetchone()
+
+	#view top 3 destinations
+	#past 3 months
+	get_top_destinations_month = "SELECT B.city as destination_city, COUNT(B.city) as frequency FROM flights as F, airport as A, airport as B, ticket AS T, purchases as P WHERE B.code = F.arrival_airport_code AND A.code = F.depart_airport_code AND F.airline_name = %s and T.ticket_id = P.ticket_id and T.flight_number = F.flight_number AND F.depart_ts BETWEEN DATE_SUB(NOW(), INTERVAL 3 MONTH) AND NOW() GROUP BY B.city ORDER BY frequency DESC LIMIT 3"
+	cursor.execute(get_top_destinations_month, (airline))
+	top_destinations_month = cursor.fetchall()
+
+	#past year
+	get_top_destinations_year = "SELECT B.city as destination_city, COUNT(B.city) as frequency FROM flights as F, airport as A, airport as B, ticket AS T, purchases as P WHERE B.code = F.arrival_airport_code AND A.code = F.depart_airport_code AND F.airline_name = %s and T.ticket_id = P.ticket_id and T.flight_number = F.flight_number AND YEAR(F.depart_ts) = YEAR(NOW()) GROUP BY B.city ORDER BY frequency DESC LIMIT 3"
+	cursor.execute(get_top_destinations_year, (airline))
+	top_destinations_year = cursor.fetchall()
+
+	cursor.close()
+
+	return render_template("staffanalytics.html", frequentflyers = top_customers, popular_places_month=top_destinations_month, popular_places_year=top_destinations_year, month_revenue=month_revenue['Revenue'], year_revenue=year_revenue['Revenue'], summary=summary)
 
 def somequeries():
 	'''
@@ -1201,7 +1248,14 @@ def somequeries():
 	#show monthwise ticket sales in a barchart/table
 
 	#show the total amount of revenue earned from ticket sales in the last month and last year
-
+	'''
+	most revenue by month of the year (not exact but maybe useful later)
+	SELECT YEAR(P.purchase_ts) as Year, MONTH(P.purchase_ts) as Month, SUM(P.sell_price) as Revenue
+	FROM purchases as P, ticket as T
+	WHERE P.ticket_id = T.ticket_id and T.airline_name = "American Airlines"
+	GROUP BY Year, Month
+	ORDER BY Revenue
+	'''
 	#find the 3 most popular destination in the past 3 months and past year (based on tickets sold)
 
 	return 0

@@ -46,10 +46,10 @@
 </style>
 
 <form action="/staffsearchflight" method="POST">
-    <input type="radio" id = "daterange" name = "search"> <label> Begin <input type="date" name = "depart_ts_start"/></label>  <label>End <input type="date" name = "depart_ts_end"/> </label></br>
-	<input type="radio" id = "flight_number" name = "search"> <input type="text" name = "flight_number" placeholder="Flight Number"/> </br>
-	<input type="radio" id = "airport" name = "search"> <input type="text" name = "depart_airport" placeholder="Departing Airport"/> <input type="text" name = "arrival_airport" placeholder="Destination Airport"/> </br>
-	<input type="radio" id = "city" name = "search"> <input type="text" name = "depart_city" placeholder="Departing City"/> <input type="text" name = "arrival_city" placeholder="Destination City"/> </br>
+    <input type="radio" id = "daterange" name = "search" value="Daterange"> <label> Begin <input type="date" name = "depart_ts_start"/></label>  <label>End <input type="date" name = "depart_ts_end"/> </label></br>
+	<input type="radio" id = "flight_number" name = "search" value="Flightnumber"> <input type="text" name = "flight_number" placeholder="Flight Number"/> </br>
+	<input type="radio" id = "airport" name = "search" value="Airport"> <input type="text" name = "depart_airport" placeholder="Departing Airport"/> <input type="text" name = "arrival_airport" placeholder="Destination Airport"/> </br>
+	<input type="radio" id = "city" name = "search" value="City"> <input type="text" name = "depart_city" placeholder="Departing City"/> <input type="text" name = "arrival_city" placeholder="Destination City"/> </br>
 	<input type="submit" value = Search>
     {% if error %}
 		<p class="error"><strong>Error:</strong> {{error}}</p>
