@@ -6,7 +6,7 @@
 
 
 {% block body %}
-<p class="message">Frequent Customers:</p>
+<p class="message">Frequent Customers in the past Year:</p>
 <style type="text/css">
 	table, th, td{
 		border: 1px solid black;
@@ -83,7 +83,7 @@
 	}
 </style>
 
-<p class="message">Monthly Report</p>
+<p class="message">Monthly Report:</p>
 <style type="text/css">
 	table, th, td{
 		border: 1px solid black;
@@ -102,6 +102,35 @@
 	</tr>
 {% endfor %}
 </table>
+
+<p class="message">Custom Report:</p>
+<style type="text/css">
+	table, th, td{
+		border: 1px solid black;
+	}
+</style>
+
+<form action="/getanalytics" method="POST">
+    <label> Begin <input type="date" name = "ts_start"/></label>  <label>End <input type="date" name = "ts_end"/> </label></br>
+	<input type="submit" value = Search>
+    {% if error %}
+		<p class="error"><strong>Error:</strong> {{error}}</p>
+	{% endif %}
+</form>
+
+<table>
+	<th>Month/Year</th>
+    <th>Number of Tickets Sold</th>
+
+{% for line in custom_summary %}
+	<tr>
+		<td>{{line['Month']}}/{{line['Year']}}</td>
+        <td>{{line['total_purchases']}}</td>
+	</tr>
+{% endfor %}
+</table>
+
+
 
 </br></br>
 
