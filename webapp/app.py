@@ -258,7 +258,7 @@ def home():
 		# Show all upcoming flights
 		query = "SELECT flights.airline_name, ticket.flight_number, depart_airport_code, arrival_airport_code, flights.depart_ts, arrival_ts, flight_status "\
 		"FROM purchases INNER JOIN ticket USING (ticket_id) INNER JOIN flights USING (flight_number) "\
-		"WHERE purchases.email = %s"
+		"WHERE purchases.email = %s AND flights.arrival_ts > NOW()"
 
 		cursor.execute(query,(username))
 
@@ -564,7 +564,7 @@ def viewspend():
 
 	cursor = conn.cursor()
 
-	query = 'SELECT SUM(sell_price) as Total FROM purchases WHERE email = %s AND DATE(purchase_ts) > %s AND DATE(purchase_ts) < %s'
+	query = 'SELECT SUM(sell_price) as Total FROM purchases WHERE email = %s AND DATE(purchase_ts) >= %s AND DATE(purchase_ts) <= %s'
 	spend_list = []
 
 	# If user specified range
