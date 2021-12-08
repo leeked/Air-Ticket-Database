@@ -158,6 +158,7 @@ def registerAuth():
 		fname = request.form['fname'].replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")
 		lname = request.form['lname'].replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")
 		DoB = request.form['DoB']
+		phone = request.form['phone']
 		airline_employer = request.form['employer'].replace('&nbsp;', ' ')
 
 		print(airline_employer)
@@ -187,6 +188,18 @@ def registerAuth():
 			cursor.execute(empl_check, (username,airline_employer))
 
 			check_res = cursor.fetchone()
+
+			# Insert phone number
+			phone_ins = 'INSERT INTO staff_phone VALUES(%s, %s)'
+			cursor.execute(phone_ins, (username, phone))
+			conn.commit()
+
+			# If secondary phone number
+			if request.form.get('check_aux_phone') == 'on':
+				aux_phone = request.form['aux_phone']
+				phone_ins = 'INSERT INTO staff_phone VALUES(%s, %s)'
+				cursor.execute(phone_ins, (username, aux_phone))
+				conn.commit()
 
 			# If not already registered into table, create entry
 			if not check_res:

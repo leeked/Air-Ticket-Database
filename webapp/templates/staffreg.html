@@ -20,6 +20,12 @@
 		{% endfor %}
 	</select></br></br>
 	
+	<label for='phone'>Phone Number</label></br>
+	<input type="text" name = "phone" placeholder="XXX-XXX-XXXX" required/> </br>
+	<label for='aux_phone'>Add a secondary phone number?</label>
+	<input type="checkbox" name="check_aux_phone" value = "on"/></br>
+	<input type="text" name = "aux_phone" placeholder="XXX-XXX-XXXX"/> </br></br>
+
 	<label for='DoB'>Date of Birth</label></br>
 	<input type="date" name = "DoB" placeholder="Date of Birth"/> </br></br>
 	<input type='hidden' name = 'type' value = 'staff'/>
