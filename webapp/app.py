@@ -906,6 +906,15 @@ def staffaddflight():
 		error = f"{airline} does not own plane with plane ID {airplane_id}"
 		return render_template('flightreg.html', flights=flight_history, error=error, company=airline)
 
+	#check if flight_number belongs to airline
+	check_flight = "SELECT * FROM Flights WHERE airline_name = %s AND flight_number = %s"
+	cursor.execute(check_flight, (airline, flight_number))
+	check_flight_result = cursor.fetchall()
+
+	if (check_flight_result):
+		error = f"{airline} already has flight with flight number {flight_number}"
+		return render_template('flightreg.html', flights=flight_history, error=error, company=airline)
+
 	#query to see if flight already exists, we know airline_name, flight_number, and depart_ts
 	# make up the primary key of Flights
 	check_flight = "SELECT * FROM Flights WHERE airline_name = %s AND flight_number = %s AND depart_ts = %s"
@@ -987,7 +996,7 @@ def staffmodifyflight():
 	conn.commit()
 
 	#query to display updated flight	
-	check_flight = "SELECT * FROM Flights WHERE airline_name = %s"
+	check_flight = "SELECT F.airline_name, F.flight_number, F.depart_ts, F.airplane_id, F.arrival_ts, A.city as arrival, D.city as depart, F.flight_status, F.base_price FROM flights as F, airport as A, airport as D WHERE F.arrival_airport_code = A.code and F.depart_airport_code = D.code AND airline_name = %s"
 	cursor.execute(check_flight, (airline))
 	flight_to_modify = cursor.fetchall()
 
