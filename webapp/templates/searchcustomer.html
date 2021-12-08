@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block head %}
+
+{% endblock %}
+
+
+{% block body %}
+<p class="message">Search for a customer's flights with us:</p>
+<style type="text/css">
+	table, th, td{
+		border: 1px solid black;
+	}
+</style>
+<form action="/getcustomerhistory" method="POST">
+    <input type="text" name = "email" placeholder="Search by email" required/> </br>
+    <input type="submit" value = Search>
+</br></br>
+<p class="message">Here are {{customer}}'s purchased flights':</p>
+<style type="text/css">
+	table, th, td{
+		border: 1px solid black;
+	}
+</style>
+
+<table>
+	<th>Flight Number</th>
+	<th>Depart Timestamp</th>
+    <th>Purchase Price</th>
+
+{% for line in flight_history %}
+	<tr>
+		<td>{{line['flight_number']}}</td>
+        <td>{{line['depart_time']}}</td>
+        <td>{{line['purchase_price']}}</td>
+	</tr>
+{% endfor %}
+</table>
+
+<a href="/staffview">Go back</a>
+{% endblock %}

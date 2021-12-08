@@ -1148,6 +1148,27 @@ def getanalytics():
 
 	return render_template("staffanalytics.html", frequentflyers = top_customers, popular_places_month=top_destinations_month, popular_places_year=top_destinations_year, month_revenue=month_revenue['Revenue'], year_revenue=year_revenue['Revenue'], summary=summary,custom_summary=custom_summary)
 
+@app.route('/viewcustomerhistory', methods=['GET', 'POST'])
+def viewcustomerhistory():
+	if session['type'] == 'customer':
+		abort(401)
+
+	return render_template('searchcustomer.html')
+
+@app.route('/getcustomerhistory', methods=['GET', 'POST'])
+def getcustomerhistory():
+	if session['type'] == 'customer':
+		abort(401)
+	airline = session["employer"]
+	email = request.form['email']
+	cursor = conn.cursor()
+	
+	get_customer_history = "SELECT T.flight_number as flight_number, T.depart_ts as depart_time, P.sell_price as purchase_price FROM purchases as P, ticket as T WHERE P.ticket_id = T.ticket_id and T.airline_name = %s AND P.email = %s ORDER BY depart_time DESC"
+	cursor.execute(get_customer_history, (airline, email))
+	customer_history = cursor.fetchall()
+
+	return render_template('searchcustomer.html', customer=email, flight_history=customer_history)
+
 def somequeries():
 	'''
 	based on the airline you work for, perform the following queries:
