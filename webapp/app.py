@@ -1167,6 +1167,10 @@ def getcustomerhistory():
 	cursor.execute(get_customer_history, (airline, email))
 	customer_history = cursor.fetchall()
 
+	if not customer_history:
+		error = "No flights found or invalid email"
+		return render_template('searchcustomer.html', customer=email, error=error)
+
 	return render_template('searchcustomer.html', customer=email, flight_history=customer_history)
 
 def somequeries():

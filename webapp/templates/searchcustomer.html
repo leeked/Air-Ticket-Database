@@ -15,6 +15,9 @@
 <form action="/getcustomerhistory" method="POST">
     <input type="text" name = "email" placeholder="Search by email" required/> </br>
     <input type="submit" value = Search>
+    {% if error %}
+		<p class="error"><strong>Error:</strong> {{error}}</p>
+	{% endif %}
 </br></br>
 <p class="message">Here are {{customer}}'s purchased flights':</p>
 <style type="text/css">
